@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Palette lifted from the original Natal Chart.html */
+@theme {
+  --font-garamond: "EB Garamond", serif;
+  --font-fell: "IM Fell English", serif;
+
+  /* parchment background gradient stops, light → dark */
+  --color-parchment-50: #f6efdd;
+  --color-parchment-100: #f2ead8;
+  --color-parchment-300: #e4d5b6;
+  /* translucent input/panel surfaces (used at 35–50% opacity) */
+  --color-cream: #fffbf0;
+
+  --color-ink: #4a3826; /* main text, lines, buttons */
+  --color-umber: #6b573d; /* secondary text */
+  --color-bronze: #8a7658; /* muted labels, captions */
+  --color-gold: #a5906c; /* borders, dividers */
+  --color-rust: #8f3b2c; /* accent: errors, retrograde, selection */
+
+  /* aspect line colors */
+  --color-aspect-hard: #b32d14; /* Opposition, Square */
+  --color-aspect-soft: #1d4e89; /* Trine, Sextile */
+  --color-aspect-minor: #1d8a44; /* Semisextile, Quincunx */
+  --color-aspect-quintile: #00b8d9; /* Quintile, Biquintile */
+}
+
+@layer base {
+  body {
+    font-family: var(--font-garamond);
+    color: var(--color-ink);
+    background: radial-gradient(
+      100% 80% at 50% 40%,
+      var(--color-parchment-50) 0%,
+      var(--color-parchment-100) 55%,
+      var(--color-parchment-300) 100%
+    );
+  }
+
+  h1 {
+    font-family: var(--font-fell);
+  }
+}
