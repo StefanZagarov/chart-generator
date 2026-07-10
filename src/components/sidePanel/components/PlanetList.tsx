@@ -9,13 +9,52 @@ import type { Planet } from "../../../types/";
 // new rows. Same reason the wheel "rotates": everything is a pure function of utcMs,
 // and this list is just another projection of it — the wheel projects the chart into
 // polar coordinates, this projects it into rows.
-export function PlanetList({ planets }: { planets: Planet[] }) {
+export function PlanetList({
+  planets,
+  ascLabel,
+  mcLabel,
+  selected,
+  onSelect,
+}: {
+  planets: Planet[];
+  ascLabel: string;
+  mcLabel: string;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
+}) {
   return (
     <div>
+      {/* The two angles first — not planets, but they live on the same wheel:
+          ascLabel/mcLabel come pre-formatted from the engine like posLabel does.
+          Their houses are definitional (ASC begins house I, MC begins house X). */}
+      {[
+        { key: "Ascendant", short: "Asc", label: ascLabel, house: "I" },
+        { key: "Midheaven", short: "MC", label: mcLabel, house: "X" },
+      ].map((angle) => (
+        <div
+          key={angle.key}
+          className="grid grid-cols-[24px_1fr_auto_34px] gap-2 items-baseline px-1 py-1 border-b border-umber/20 hover:bg-umber/5"
+        >
+          <span className="text-[11px] tracking-wide text-bronze">
+            {angle.short}
+          </span>
+          <span className="text-[14.5px]">{angle.key}</span>
+          <span className="text-[14.5px]">{angle.label}</span>
+          <span className="text-[12.5px] italic text-bronze text-right">
+            {angle.house}
+          </span>
+        </div>
+      ))}
+
+      {/* Rows are the same selection surface as the wheel's glyphs: clicking one
+          toggles that planet, and the selected row gets a faint rust wash */}
       {planets.map((planet) => (
         <div
           key={planet.name}
-          className="grid grid-cols-[24px_1fr_auto_34px] gap-2 items-baseline px-1 py-1 border-b border-umber/20 hover:bg-umber/5"
+          onClick={() => onSelect(planet.name)}
+          className={`grid grid-cols-[24px_1fr_auto_34px] gap-2 items-baseline px-1 py-1 border-b border-umber/20 cursor-pointer hover:bg-umber/5 ${
+            selected === planet.name ? "bg-rust/10" : ""
+          }`}
         >
           <span className="text-[17px]">{planet.glyph}</span>
           <span className="text-[14.5px]">

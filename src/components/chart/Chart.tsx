@@ -9,10 +9,27 @@ import { useRef } from "react";
 // Drawing pictures in the form of circles and lines
 export function Chart({
   chart,
+  selected,
+  selectedAspect,
+  related,
   onScrub,
+  onWind,
+  onSelect,
+  onSelectAspect,
+  onReturn,
 }: {
   chart: Chart;
+  /** name of the selected planet, or null */
+  selected: string | null;
+  /** "p1|p2" key of the selected aspect line, or null */
+  selectedAspect: string | null;
+  /** the planets to keep bright while a selection is active — everything else dims */
+  related: ReadonlySet<string> | null;
   onScrub: (deltaDeg: number) => void;
+  onWind: (deltaMs: number) => void;
+  onSelect: (name: string | null) => void;
+  onSelectAspect: (key: string | null) => void;
+  onReturn: () => void;
 }) {
   // Wheel dragging
   // Logic: angleOf measures where the pointer is on a clock face centered on the SVG, via atan2 on the pixel offsets from the center of the element's bounding box. Each move event reports only the change since the last event; the ((delta + 540) % 360) - 180 line fixes the seam where atan2 jumps from +179° to −179° — without it, dragging across the left horizontal would register as a violent 358° spin. setPointerCapture tells the browser "keep sending me this pointer's events even if it leaves the SVG" — that's what makes dragging feel solid instead of dying at the edge. touch-none (CSS touch-action: none) stops mobile browsers from hijacking the gesture to scroll the page.
@@ -21,6 +38,15 @@ export function Chart({
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false); // is a drag in progress right now?
   const prevAngle = useRef(0); // pointer angle at the previous move event
+
+  // Tap vs drag
+  // Logic: press and release are the same events for both gestures — what separates
+  // them is how far the pointer swept in between. moved accumulates the absolute
+  // sweep; under 3° at release it was a tap, and the element remembered from
+  // pointer-down (not pointer-up, which may have slid elsewhere) tells us what was
+  // tapped: a planet group toggles selection, empty wheel clears it.
+  const moved = useRef(0); // total degrees swept during this press
+  const downTarget = useRef<EventTarget | null>(null); // what the press started on
 
   // Drag render optimisation
   // Logic: a mouse fires move events at 125–1000 Hz while the screen paints at ~60. If every event called onScrub directly, React would only commit the last one per frame and the deltas in between would evaporate — the wheel would lag behind a fast drag. Instead every event just adds its sweep to pendingDelta (banked, not overwritten), and requestAnimationFrame — "call me right before the next paint" — flushes the total as a single onScrub. The rafPending flag ensures only one flush is scheduled per frame no matter how many events land in it. Net effect: no delta is ever lost, and the expensive part (the secant solver with its up-to-6 computeChart calls) runs at most once per painted frame instead of once per mouse twitch.
@@ -39,11 +65,16 @@ export function Chart({
 
   const onPointerDown = (e: React.PointerEvent) => {
     dragging.current = true;
+    moved.current = 0;
+    downTarget.current = e.target;
     // remember where the drag starts — deltas are measured from here
     prevAngle.current = angleOf(e);
     // keep receiving this pointer's events even when it leaves the SVG,
     // so the drag doesn't die at the edge
     e.currentTarget.setPointerCapture(e.pointerId);
+    // closed fist while dragging — the class (styled in index.css) forces
+    // grabbing on every child too, overriding their cursor-pointer
+    svgRef.current?.classList.add("wheel-dragging");
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -55,6 +86,7 @@ export function Chart({
     // doesn't read as a violent 358° spin
     delta = ((delta + 540) % 360) - 180;
     prevAngle.current = angle;
+    moved.current += Math.abs(delta);
 
     // bank the sweep instead of reporting it immediately
     pendingDelta.current += delta;
@@ -73,6 +105,28 @@ export function Chart({
 
   const onPointerUp = () => {
     dragging.current = false;
+    svgRef.current?.classList.remove("wheel-dragging");
+    // a still press-and-release is a tap: planet beats aspect line beats empty
+    // wheel (which clears every selection — App's onSelect(null) resets both)
+    if (moved.current < 3) {
+      const target = downTarget.current as Element | null;
+      const planetGroup = target?.closest?.("[data-planet]");
+      const aspectGroup = planetGroup ? null : target?.closest?.("[data-aspect]");
+      if (planetGroup) onSelect(planetGroup.getAttribute("data-planet"));
+      else if (aspectGroup)
+        onSelectAspect(aspectGroup.getAttribute("data-aspect"));
+      else onSelect(null);
+    }
+  };
+
+  // Scroll winds time directly — no solver needed, unlike drag which speaks
+  // degrees. Mouse wheels report deltaY in ~100-per-notch steps, trackpads in a
+  // smooth stream of small values; dividing by 100 normalizes both into
+  // "notches", and the clamp stops a hard trackpad fling from teleporting.
+  // One notch = 1 minute; scrolling down winds forward.
+  const onWheel = (e: React.WheelEvent) => {
+    const notches = Math.max(-8, Math.min(8, e.deltaY / 100));
+    onWind(notches * 60_000);
   };
 
   // Ascendant position
@@ -89,6 +143,8 @@ export function Chart({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onWheel={onWheel}
+      onDoubleClick={onReturn}
       viewBox="-515 -515 1030 1030"
       className="block h-[88svh] aspect-square mx-auto cursor-grab touch-none"
     >
@@ -137,8 +193,18 @@ export function Chart({
         cusps={chart.cusps}
         ascendant={ascendant}
       />
-      <Aspects polarPoint={polarPoint} aspects={chart.aspects} />
-      <Planets polarPoint={polarPoint} planets={chart.planets} />
+      <Aspects
+        polarPoint={polarPoint}
+        aspects={chart.aspects}
+        selected={selected}
+        selectedAspect={selectedAspect}
+      />
+      <Planets
+        polarPoint={polarPoint}
+        planets={chart.planets}
+        selected={selected}
+        related={related}
+      />
     </svg>
   );
 }

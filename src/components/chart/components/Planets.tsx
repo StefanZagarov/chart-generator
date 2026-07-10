@@ -3,9 +3,13 @@ import type { Planet, Polar } from "../../../types/";
 export function Planets({
   polarPoint,
   planets,
+  selected,
+  related,
 }: {
   polarPoint: Polar;
   planets: Planet[];
+  selected: string | null;
+  related: ReadonlySet<string> | null;
 }) {
   // Planet position logic
   // Logic: Sort planets by longitude, walk them in order; each starts at level 0, but if it sits less than 8.5° after the previous one, it takes the previous level + 1 (wrapping 2 → 0). previousLon = -999 is just "no previous planet yet" for the first iteration. Result: stackLevel["Sun"] etc. → 0, 1, or 2, used as glyphRadius = 374 - stackLevel[planet.name] * 48
@@ -38,7 +42,16 @@ export function Planets({
         const [dotX, dotY] = polarPoint(planet.lon, 240); // dot on the aspect circle
         const [labelX, labelY] = polarPoint(planet.lon, glyphRadius - 26); // degree label below the glyph
         return (
-          <g key={planet.name}>
+          // data-planet is what Chart's tap detection looks for via closest().
+          // Selection dimming: while any selection is active (planet or aspect
+          // line), related holds the planets to keep bright; everything else
+          // fades to 20%, whole group at once — glyph, marker, guide, dot, label.
+          <g
+            key={planet.name}
+            data-planet={planet.name}
+            opacity={related && !related.has(planet.name) ? 0.2 : 1}
+            className="cursor-pointer transition-opacity duration-300"
+          >
             {/* Planet glyph */}
             <text
               x={glyphX}
@@ -100,6 +113,21 @@ export function Planets({
                 {"℞"}
               </text>
             )}
+
+            {/* Invisible fat hit target — taps don't need pixel precision.
+                Transparent fill still catches pointer events; fill="none" wouldn't. */}
+            <circle cx={glyphX} cy={glyphY} r={23} fill="rgba(0,0,0,0)" />
+            {/* Selection ring around the chosen planet's glyph */}
+            <circle
+              cx={glyphX}
+              cy={glyphY}
+              r={20}
+              fill="none"
+              stroke="#8f3b2c"
+              strokeWidth={0.9}
+              opacity={selected === planet.name ? 1 : 0}
+              className="transition-opacity duration-300"
+            />
           </g>
         );
       })}

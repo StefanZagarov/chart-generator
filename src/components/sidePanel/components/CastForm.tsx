@@ -167,12 +167,33 @@ export function CastForm({
     onCast(utcMs, found);
   };
 
+  // Nearest listed city to a coordinate — for the display label only.
+  // Squared equirectangular distance is plenty to pick a winner: latitude
+  // degrees are constant-size, longitude degrees shrink by cos(lat), and the
+  // wrap at ±180° is folded to the short way around.
+  const nearestCity = (lat: number, lon: number): City => {
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    let best = CITIES[0];
+    let bestDist = Infinity;
+    for (const c of CITIES) {
+      const dLat = c.lat - lat;
+      let dLon = Math.abs(c.lon - lon);
+      if (dLon > 180) dLon = 360 - dLon;
+      const dist = dLat * dLat + dLon * cosLat * (dLon * cosLat);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = c;
+      }
+    }
+    return best;
+  };
+
   // "Now" = the cast gate driven backwards: take the current instant, ask wallClock
-  // what the clocks in the selected city show right now, write that INTO the form
-  // fields (so the form always displays what was cast), and cast immediately.
-  const setNow = () => {
+  // what the clocks show there right now, write that INTO the form fields (so the
+  // form always displays what was cast), and cast immediately.
+  const castNowAt = (nowCity: City) => {
     const nowMs = Date.now();
-    const wc = wallClock(city.tz, nowMs); // wc.date "YYYY-MM-DD", wc.time "HH:MM"
+    const wc = wallClock(nowCity.tz, nowMs); // wc.date "YYYY-MM-DD", wc.time "HH:MM"
     const [y, mo, d] = wc.date.split("-");
     const [h, min] = wc.time.split(":");
     setDay(d);
@@ -180,9 +201,36 @@ export function CastForm({
     setYear(y);
     setHour(h);
     setMinute(min);
-    setPlace(city.label);
+    setPlace(nowCity.label);
     setError("");
-    onCast(nowMs, city);
+    onCast(nowMs, nowCity);
+  };
+
+  // Logic: getCurrentPosition triggers the browser's native permission prompt.
+  // GPS only hands us coordinates, but a City needs a timezone and a name too —
+  // so the cast uses the EXACT coords, the browser's own IANA timezone (correct
+  // for wherever the user physically is, unlike the nearest city's tz), and the
+  // nearest listed city purely as the display label. Denied / unavailable / slow
+  // (>5s) falls back to the currently selected city — the old behavior.
+  const setNow = () => {
+    if (!navigator.geolocation) {
+      castNowAt(city);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const near = nearestCity(latitude, longitude);
+        castNowAt({
+          ...near,
+          lat: latitude,
+          lon: longitude,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+      },
+      () => castNowAt(city),
+      { timeout: 5000 },
+    );
   };
 
   return (

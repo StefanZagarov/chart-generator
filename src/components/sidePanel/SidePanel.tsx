@@ -2,6 +2,8 @@ import { offsetLabel } from "../../engine/ephemeris";
 import type { Chart, City } from "../../types/";
 import { CastForm } from "./components/CastForm";
 import { AspectToggles } from "./components/AspectToggles";
+import { WindTheClock } from "./components/WindTheClock";
+import { SelectedCard } from "./components/SelectedCard";
 import { PlanetList } from "./components/PlanetList";
 
 // The side panel logic
@@ -24,16 +26,30 @@ export function SidePanel({
   utcMs,
   city,
   aspectsOff,
+  selected,
   onCast,
   onToggleAspect,
+  onSelect,
+  onSetTime,
 }: {
   chart: Chart;
   utcMs: number;
   city: City;
   aspectsOff: Record<string, boolean>;
+  selected: string | null;
   onCast: (utcMs: number, city: City) => void;
   onToggleAspect: (type: string) => void;
+  onSelect: (name: string | null) => void;
+  onSetTime: (ms: number) => void;
 }) {
+  // the selected planet's full record + the aspects it participates in —
+  // derived here so SelectedCard stays a dumb display component
+  const selectedPlanet = selected
+    ? chart.planets.find((p) => p.name === selected)
+    : undefined;
+  const selectedAspects = selected
+    ? chart.aspects.filter((a) => a.p1 === selected || a.p2 === selected)
+    : [];
   return (
     <aside className="flex-none w-[332px] h-full overflow-y-auto border-r-[3px] border-double border-gold px-6 pt-6 pb-4 flex flex-col gap-4">
       {/* Header */}
@@ -58,8 +74,21 @@ export function SidePanel({
       <Divider label="ASPECTS" />
       <AspectToggles aspectsOff={aspectsOff} onToggle={onToggleAspect} />
 
+      <Divider label="WIND THE CLOCK" />
+      <WindTheClock utcMs={utcMs} onSetTime={onSetTime} />
+
+      {selectedPlanet && (
+        <SelectedCard planet={selectedPlanet} aspects={selectedAspects} />
+      )}
+
       <Divider label="PLANETS" />
-      <PlanetList planets={chart.planets} />
+      <PlanetList
+        planets={chart.planets}
+        ascLabel={chart.ascLabel}
+        mcLabel={chart.mcLabel}
+        selected={selected}
+        onSelect={onSelect}
+      />
     </aside>
   );
 }

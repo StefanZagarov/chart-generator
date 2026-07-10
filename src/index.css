@@ -25,6 +25,15 @@
   --color-aspect-quintile: #00b8d9; /* Quintile, Biquintile */
 }
 
+/* While dragging the wheel, force the closed fist everywhere — including over
+   planets and aspect lines, whose cursor-pointer would otherwise win. Toggled
+   by Chart via classList (no React render involved). Deliberately unlayered so
+   it outranks Tailwind utilities. */
+.wheel-dragging,
+.wheel-dragging * {
+  cursor: grabbing !important;
+}
+
 @layer base {
   body {
     font-family: var(--font-garamond);
