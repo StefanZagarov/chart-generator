@@ -21,6 +21,7 @@ const Astro = (() => {
     "Aquarius",
     "Pisces",
   ];
+
   const SIGN_GLYPHS = [
     "\u2648\uFE0E",
     "\u2649\uFE0E",
@@ -635,6 +636,7 @@ const Astro = (() => {
   }
 
   // ---- Cities ----
+  // TODO: Make it its own config variable
   const RAW = [
     ["New York, USA", 40.7128, -74.006, "America/New_York"],
     ["Los Angeles, USA", 34.0522, -118.2437, "America/Los_Angeles"],
@@ -731,6 +733,7 @@ const Astro = (() => {
     ["Auckland, New Zealand", -36.8485, 174.7633, "Pacific/Auckland"],
     ["Wellington, New Zealand", -41.2866, 174.7756, "Pacific/Auckland"],
   ];
+
   const CITIES = RAW.map(([label, lat, lon, tz]) => ({
     label,
     name: label.split(",")[0],
@@ -738,6 +741,7 @@ const Astro = (() => {
     lon,
     tz,
   }));
+
   function findCity(q) {
     if (!q) return null;
     const s = q.trim().toLowerCase();
