@@ -6,6 +6,7 @@ import {
 } from "@swisseph/browser";
 import { assembleChart } from "./assembly";
 import type { RawBody } from "./assembly";
+import { norm } from "./almanac";
 import type { Chart, HouseSystem, PlanetName } from "../types/";
 
 /** The Swiss Ephemeris adapter — the only file that talks to the WASM engine.
@@ -43,13 +44,20 @@ const HOUSE_IDS: Record<HouseSystem, SweHouseSystem> = {
 let swe: SwissEphemeris | null = null;
 let ready: Promise<void> | null = null;
 
-/** Load + compile the WASM module. Idempotent: every caller shares one promise. */
+/** Load + compile the WASM module. Idempotent: every caller shares one promise —
+ * but a FAILED load is not cached, so calling initEngine() again retries. */
 export function initEngine(): Promise<void> {
   if (!ready) {
     const instance = new SwissEphemeris();
-    ready = instance.init().then(() => {
-      swe = instance;
-    });
+    ready = instance.init().then(
+      () => {
+        swe = instance;
+      },
+      (err) => {
+        ready = null;
+        throw err;
+      },
+    );
   }
   return ready;
 }
@@ -73,16 +81,24 @@ export function computeChart(
   const s = engine();
   const jd = toJd(utcMs);
 
-  // positions come with speed included (degrees/day, negative = retrograde)
+  // positions come with speed included (degrees/day, negative = retrograde).
+  // norm() re-establishes the [0, 360) invariant at the seam — assembly's
+  // sign math (floor(lon/30)) breaks on a longitude of exactly 360
   const bodies: RawBody[] = BODY_IDS.map(([name, id]) => {
     const pos = s.calculatePosition(jd, id);
-    return { name, lon: pos.longitude, speed: pos.longitudeSpeed };
+    return { name, lon: norm(pos.longitude), speed: pos.longitudeSpeed };
   });
 
   // Swiss returns cusps 1-indexed (cusps[1] = 1st house = asc);
   // the app's Chart wants a 12-slot array with cusps[0] = asc
   const h = s.calculateHouses(jd, lat, lon, HOUSE_IDS[houseSystem]);
-  return assembleChart(jd, bodies, h.ascendant, h.mc, h.cusps.slice(1, 13));
+  return assembleChart(
+    jd,
+    bodies,
+    norm(h.ascendant),
+    norm(h.mc),
+    h.cusps.slice(1, 13).map(norm),
+  );
 }
 
 /** Fast path for the drag solver: just the ascendant, no planets, no assembly —
@@ -93,6 +109,8 @@ export function ascAt(
   lon: number,
   houseSystem: HouseSystem = "Placidus",
 ): number {
-  return engine().calculateHouses(toJd(utcMs), lat, lon, HOUSE_IDS[houseSystem])
-    .ascendant;
+  return norm(
+    engine().calculateHouses(toJd(utcMs), lat, lon, HOUSE_IDS[houseSystem])
+      .ascendant,
+  );
 }

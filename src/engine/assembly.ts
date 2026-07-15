@@ -92,19 +92,22 @@ function buildPlanet(raw: RawBody, cusps: number[]): Planet {
 }
 
 /** The aspect web.
- * Logic: every unordered pair of the first 10 bodies (the Node makes no aspects —
- * hence `< 10`, not planets.length). The pair's separation is the shortest angular
- * distance between them; each aspect type matches if the separation sits within
- * `orb` degrees of the type's exact angle — widened by 1.5° when the Sun or Moon
- * is involved (luminaries get looser orbs by tradition), except for MINOR aspects,
- * which stay tight. If several types match, the tightest (smallest deviation) wins.
- * The final list is sorted tightest-first so the panel reads strongest to weakest. */
+ * Logic: every unordered pair of bodies, except pairs involving the Node — it
+ * makes no aspects by this app's convention (checked by name, so the rule holds
+ * no matter what order the bodies arrive in). The pair's separation is the
+ * shortest angular distance between them; each aspect type matches if the
+ * separation sits within `orb` degrees of the type's exact angle — widened by
+ * 1.5° when the Sun or Moon is involved (luminaries get looser orbs by
+ * tradition), except for MINOR aspects, which stay tight. If several types
+ * match, the tightest (smallest deviation) wins. The final list is sorted
+ * tightest-first so the panel reads strongest to weakest. */
 function findAspects(planets: Planet[]): Aspect[] {
   const aspects: Aspect[] = [];
-  for (let i = 0; i < 10; i++)
-    for (let j = i + 1; j < 10; j++) {
+  for (let i = 0; i < planets.length; i++)
+    for (let j = i + 1; j < planets.length; j++) {
       const a = planets[i],
         b = planets[j];
+      if (a.name === "Node" || b.name === "Node") continue;
       const sep = Math.abs(dAng(a.lon, b.lon));
       const lum =
         a.name === "Sun" ||
