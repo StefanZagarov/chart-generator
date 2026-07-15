@@ -1,4 +1,4 @@
-import { computeChart } from "../engine/ephemeris";
+import { ascAt } from "../engine/swiss";
 import type { HouseSystem } from "../types";
 
 // ms for the sky to turn 1° (sidereal day / 360)
@@ -32,8 +32,9 @@ export function scrub(
   let t = from.utcMs + deltaDeg * SID_MS;
 
   for (let i = 0; i < 6; i++) {
-    // ask the engine where the ascendant actually is at the guessed time
-    const asc = computeChart(t, lat, lon, houseSystem).asc;
+    // ask the engine where the ascendant actually is at the guessed time —
+    // ascAt is the adapter's fast path: a houses call only, no planets built
+    const asc = ascAt(t, lat, lon, houseSystem);
     // how far off we still are, in degrees
     const err = angleDiff(asc, target);
     if (Math.abs(err) < 0.01) break; // close enough: within 0.01°

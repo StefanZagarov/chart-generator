@@ -7,7 +7,12 @@
     <title>my-app</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Shown only until the WASM engine finishes loading (main.tsx replaces it on mount) -->
+    <div id="root">
+      <p style="font-style: italic; text-align: center; margin-top: 40vh">
+        Consulting the ephemeris…
+      </p>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
