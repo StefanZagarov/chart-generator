@@ -2,12 +2,8 @@ import { useState } from "react";
 import { Chart } from "./components/chart/Chart";
 import { SidePanel } from "./components/sidePanel/SidePanel";
 // TODO: Replace with Swiss Ephemeris WASM
-import {
-  computeChart,
-  findCity,
-  prettyDate,
-  wallClock,
-} from "./engine/ephemeris";
+import { computeChart } from "./engine/ephemeris";
+import { findCity, prettyDate, wallClock } from "./engine/almanac";
 import { scrub } from "./lib/scrubTime";
 import { useTween } from "./hooks/useTween";
 import type { City } from "./types/";

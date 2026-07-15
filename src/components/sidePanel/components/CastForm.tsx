@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { RefObject } from "react";
-import { CITIES, findCity, localToUTC, wallClock } from "../../../engine/ephemeris";
+import { CITIES, findCity, localToUTC, wallClock } from "../../../engine/almanac";
 import type { City } from "../../../types/";
 
 // The birth-data form. Owns its field strings locally — they're just text until

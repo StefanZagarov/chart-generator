@@ -1,4 +1,4 @@
-import { offsetLabel } from "../../engine/ephemeris";
+import { offsetLabel } from "../../engine/almanac";
 import type { Chart, City } from "../../types/";
 import { CastForm } from "./components/CastForm";
 import { AspectToggles } from "./components/AspectToggles";
