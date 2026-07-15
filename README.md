@@ -1,3 +1,17 @@
+# Natal Chart
+
+An interactive natal chart wheel — drag the sky, wind the clock, cast a chart for any time and place. React 19 + TypeScript + Vite + Tailwind v4, planetary positions by Swiss Ephemeris (WebAssembly).
+
+## License
+
+This project is licensed under the **GNU AGPL-3.0** (see `LICENSE`).
+
+Planetary calculations use the [Swiss Ephemeris](https://www.astro.com/swisseph/) © Astrodienst AG, via [`@swisseph/browser`](https://www.npmjs.com/package/@swisseph/browser), under the AGPL-3.0. Commercial licensing for Swiss Ephemeris is available from Astrodienst.
+
+> Note: `@swisseph/browser` is pinned to exactly `1.1.0` — the `1.1.1` browser bundle is broken (ESM bundle referencing an undeclared CommonJS `exports`; its enums never reach the export list). Don't loosen the pin without testing an import of `HouseSystem` from the package.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
