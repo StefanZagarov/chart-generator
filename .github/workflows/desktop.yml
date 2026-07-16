@@ -7,6 +7,9 @@ name: desktop
 on:
   push:
     tags: ["v*"]
+    # temporary: verify the pipeline from this branch (workflow_dispatch only
+    # works once the workflow exists on the default branch) — remove on merge
+    branches: [desktop]
   workflow_dispatch:
 
 jobs:
