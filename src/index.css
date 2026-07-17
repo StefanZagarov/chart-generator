@@ -49,4 +49,11 @@
   h1 {
     font-family: var(--font-fell);
   }
+
+  /* No blue system focus ring anywhere — it clashes with the parchment look.
+     Text inputs still signal focus their own way (border-gold → border-ink). */
+  :focus,
+  :focus-visible {
+    outline: none;
+  }
 }
