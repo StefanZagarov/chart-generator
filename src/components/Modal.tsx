@@ -37,7 +37,7 @@ export function Modal({
         <div className="flex items-baseline gap-3 mb-4">
           <div className="font-fell text-[24px]">{title}</div>
           {aside && (
-            <div className="ml-auto text-[11.5px] italic tracking-[0.08em] text-bronze">
+            <div className="ml-auto text-[14px] italic tracking-[0.08em] text-bronze">
               {aside}
             </div>
           )}
