@@ -139,7 +139,9 @@ function App() {
         onLoadChart={loadChart}
         onDeleteChart={(id) => deleteChart(id).then(setSaved)}
       />
-      <main className="flex-1 min-w-0 flex flex-col items-center justify-center">
+      {/* select-none: belt to the preventDefault suspenders in Chart — the
+          wheel's numerals/labels and the footer must never highlight mid-drag */}
+      <main className="flex-1 min-w-0 flex flex-col items-center justify-center select-none">
         {/* The drag pipeline: Chart reports "user swept delta degrees" → scrub solves
             "at what time has the ascendant moved that far?" → setUtcMs stores it →
             re-render → computeChart → every polarPoint lands differently → the wheel

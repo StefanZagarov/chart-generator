@@ -70,6 +70,9 @@ export function Chart({
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
+    // stop the native selection gesture before it starts: WebKitGTK (unlike
+    // Chrome) happily begins marking text mid-drag even under pointer capture
+    e.preventDefault();
     dragging.current = true;
     moved.current = 0;
     downTarget.current = e.target;
