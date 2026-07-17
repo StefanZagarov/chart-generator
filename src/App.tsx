@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Chart } from "./components/chart/Chart";
 import { SidePanel } from "./components/sidePanel/SidePanel";
 import { OptionsPanel } from "./components/OptionsPanel";
+import { VaultActions } from "./components/VaultActions";
 import { ChartLibrary } from "./components/ChartLibrary";
 import { ImportDialog } from "./components/ImportDialog";
 import { computeChart } from "./engine/swiss";
@@ -141,16 +142,6 @@ function App() {
         }}
         // saves capture utcMs — the moment on the wheel RIGHT NOW, wound or
         // dragged included — not just the last formal cast
-        onSaveChart={(name) =>
-          saveChart({
-            name,
-            castMs: utcMs,
-            city,
-            houseSystem: HOUSE_SYSTEM,
-          }).then(setSaved)
-        }
-        onOpenLibrary={() => setDialog("library")}
-        onOpenImport={() => setDialog("import")}
       />
       {/* select-none: belt to the preventDefault suspenders in Chart — the
           wheel's numerals/labels and the footer must never highlight mid-drag */}
@@ -202,6 +193,18 @@ function App() {
           {wallClock(city.tz, utcMs).time} · {HOUSE_SYSTEM} houses
         </footer>
       </main>
+      <VaultActions
+        onSave={(name) =>
+          saveChart({
+            name,
+            castMs: utcMs,
+            city,
+            houseSystem: HOUSE_SYSTEM,
+          }).then(setSaved)
+        }
+        onOpenLibrary={() => setDialog("library")}
+        onOpenImport={() => setDialog("import")}
+      />
       <OptionsPanel
         showSigns={showSigns}
         numerals={numerals}
