@@ -49,12 +49,16 @@ export function parseAAF(
     const bLine = lines[i + 1]?.startsWith("#B") ? lines[i + 1] : null;
 
     // strip the "#A93:" prefix, then split — the place keeps its inner commas
+    // (filtering empties: ",, US, IL" means "no city, state IL", not ", US, IL")
     const a = aLine.slice(aLine.indexOf(":") + 1).split(",");
     const [, name, , date, time, ...placeParts] = a.map((f) => f.trim());
-    const place = placeParts.join(", ");
+    const place = placeParts.filter(Boolean).join(", ");
 
     const [d, mo, y] = (date ?? "").split(".").map(Number);
-    const [hh, mi] = (time ?? "").split(":").map(Number);
+    // "*" is astro.com's "birth time unknown" — the convention is a noon
+    // chart: houses are meaningless either way, noon halves the planet error
+    const [hh, mi] =
+      time === "*" || time === "" ? [12, 0] : (time ?? "").split(":").map(Number);
 
     if (!bLine) {
       errors.push(`${name || aLine}: missing #B line`);

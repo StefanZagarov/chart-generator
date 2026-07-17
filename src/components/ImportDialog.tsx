@@ -23,7 +23,8 @@ export function ImportDialog({
     <Modal title="Import Charts" onClose={onClose}>
       <div className="text-[13px] italic text-umber mb-3">
         Paste an AAF export (astro.com → My Astro → Import/Export) — one or
-        more #A/#B line pairs. Existing charts with the same name are updated.
+        more #A/#B line pairs. Existing charts with the same name are updated;
+        an unknown birth time (“*”) imports as a noon chart.
       </div>
       <textarea
         value={text}
