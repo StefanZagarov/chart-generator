@@ -100,6 +100,39 @@ export function CastForm({
   const [place, setPlace] = useState(city.label);
   const [error, setError] = useState("");
 
+  // Place autocomplete over the 170k-place atlas. CITIES is population-sorted,
+  // so the first 8 prefix hits are automatically the 8 biggest matches.
+  const [suggestions, setSuggestions] = useState<City[]>([]);
+  const [highlighted, setHighlighted] = useState(-1);
+  // The city the user actually clicked/chose in the dropdown. This beats
+  // findCity at cast time: with a global atlas, one label can name several
+  // places ("Springfield, United States"…) and findCity would return the
+  // biggest — picking from the dropdown must mean THAT one.
+  const pickedCity = useRef<City | null>(null);
+
+  const suggest = (q: string): City[] => {
+    const s = q.trim().toLowerCase();
+    if (s.length < 2) return []; // one letter would always match a megacity
+    const out: City[] = [];
+    for (const c of CITIES) {
+      if (
+        c.name.toLowerCase().startsWith(s) ||
+        c.label.toLowerCase().startsWith(s)
+      ) {
+        out.push(c);
+        if (out.length === 8) break;
+      }
+    }
+    return out;
+  };
+
+  const pick = (c: City) => {
+    pickedCity.current = c;
+    setPlace(c.label);
+    setSuggestions([]);
+    setHighlighted(-1);
+  };
+
   const dayRef = useRef<HTMLInputElement>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
@@ -142,7 +175,12 @@ export function CastForm({
   const clampMinute = (v: string) => clampNum(v, 0, 59);
 
   const cast = () => {
-    const found = findCity(place);
+    // a dropdown pick wins while the field still shows it; edited text falls
+    // back to findCity (which resolves same-label homonyms to the biggest)
+    const found =
+      pickedCity.current && pickedCity.current.label === place
+        ? pickedCity.current
+        : findCity(place);
     if (!found) {
       setError("Unknown city");
       return;
@@ -262,20 +300,57 @@ export function CastForm({
         <div className="text-[10.5px] tracking-[0.26em] uppercase text-bronze mb-1">
           Place of birth
         </div>
-        <input
-          type="text"
-          list="cityList"
-          value={place}
-          onChange={(e) => setPlace(e.target.value)}
-          placeholder="Choose a city…"
-          className="w-full bg-transparent border-0 border-b border-gold px-0.5 py-1 text-[15.5px] outline-none focus:border-ink"
-        />
-        {/* Native autocomplete: the browser suggests from this list while typing */}
-        <datalist id="cityList">
-          {CITIES.map((c) => (
-            <option key={c.label} value={c.label} />
-          ))}
-        </datalist>
+        <div className="relative">
+          <input
+            type="text"
+            value={place}
+            onChange={(e) => {
+              setPlace(e.target.value);
+              pickedCity.current = null; // typing invalidates the pick
+              setSuggestions(suggest(e.target.value));
+              setHighlighted(-1);
+            }}
+            onKeyDown={(e) => {
+              if (suggestions.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setHighlighted((h) => (h + 1) % suggestions.length);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setHighlighted(
+                  (h) => (h - 1 + suggestions.length) % suggestions.length,
+                );
+              } else if (e.key === "Enter" && highlighted >= 0) {
+                pick(suggestions[highlighted]);
+              } else if (e.key === "Escape") {
+                setSuggestions([]);
+              }
+            }}
+            onBlur={() => setSuggestions([])}
+            placeholder="Choose a city…"
+            className="w-full bg-transparent border-0 border-b border-gold px-0.5 py-1 text-[15.5px] outline-none focus:border-ink"
+          />
+          {suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-10 border border-gold bg-parchment-50 shadow-md">
+              {suggestions.map((c, i) => (
+                <div
+                  key={`${c.label}-${c.lat}-${c.lon}`}
+                  // mousedown fires before the input's blur — a click always lands
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    pick(c);
+                  }}
+                  onMouseEnter={() => setHighlighted(i)}
+                  className={`px-2 py-1 text-[13.5px] cursor-pointer ${
+                    i === highlighted ? "bg-umber/10" : ""
+                  }`}
+                >
+                  {c.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="flex justify-between mt-1">
           <div className="text-[12.5px] italic text-bronze">{coordsLabel}</div>
           <div className="text-[12.5px] italic text-rust">{error}</div>

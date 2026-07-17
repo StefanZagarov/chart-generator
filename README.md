@@ -89,3 +89,10 @@ export default defineConfig([
 ])
 
 ```
+
+## Place data
+
+City names, coordinates, and timezones come from [GeoNames](https://www.geonames.org)
+(`cities1000` — every place with 1,000+ inhabitants), licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Regenerate
+`public/cities.json` with `scripts/build-cities.mjs` (instructions in the script).
