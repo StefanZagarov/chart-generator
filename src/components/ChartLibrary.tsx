@@ -24,14 +24,19 @@ export function ChartLibrary({
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
+  // The query is a case-insensitive regex when it compiles ("^An", "ova$",
+  // "Sofia|Athens") and a plain substring when it doesn't — so a half-typed
+  // "[" never breaks the search, it just matches nothing-special literally.
+  let matches = (s: string) => s.toLowerCase().includes(q.toLowerCase());
+  try {
+    const re = new RegExp(q, "i");
+    matches = (s: string) => re.test(s);
+  } catch {
+    /* invalid regex → the substring fallback above stands */
+  }
   const shown = charts
-    .filter(
-      (c) =>
-        !q ||
-        c.name.toLowerCase().includes(q) ||
-        c.city.label.toLowerCase().includes(q),
-    )
+    .filter((c) => !q || matches(c.name) || matches(c.city.label))
     // localeCompare so "Ángela" files under A, not after Z
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -48,7 +53,7 @@ export function ChartLibrary({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name or place…"
+          placeholder="Search by name or place… (regex works)"
           className="w-full mb-4 bg-cream/60 border-0 border-b border-gold focus:border-ink outline-none px-1 py-1.5 text-[14.5px]"
         />
       )}
