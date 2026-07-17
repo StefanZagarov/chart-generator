@@ -6,7 +6,7 @@ import { VaultActions } from "./components/VaultActions";
 import { ChartLibrary } from "./components/ChartLibrary";
 import { ImportDialog } from "./components/ImportDialog";
 import { computeChart } from "./engine/swiss";
-import { CITIES, findCity, prettyDate, wallClock } from "./engine/almanac";
+import { CITIES, prettyDate, wallClock } from "./engine/almanac";
 import { deleteChart, importCharts, listCharts, saveChart } from "./lib/chartVault";
 import { parseAAF } from "./lib/aaf";
 import { wheelImage } from "./lib/wheelImage";
@@ -16,11 +16,14 @@ import type { City, HouseSystem, Numerals, SavedChart } from "./types/";
 
 // Startup anchor: the moment the app was opened, placed in the machine's own
 // timezone — the OS already knows its IANA zone, and City.tz holds the same
-// names, so a plain find matches this computer to a listed city. No listed
-// city in this zone → the old New York default keeps startup deterministic.
+// names, so a plain find matches this computer to a listed city (rows are
+// population-sorted, so it finds the zone's biggest city). LAZY on purpose:
+// this module is imported before the boot gate fills CITIES, so resolving at
+// module level would read an empty atlas — a null city, a white screen. As a
+// useState initializer it runs at first render, safely after the gate.
 const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const HOME_CITY =
-  CITIES.find((c) => c.tz === localTz) ?? (findCity("New York, USA") as City);
+const homeCity = () =>
+  CITIES.find((c) => c.tz === localTz) ?? CITIES[0]; // [0] = Earth's biggest city
 const CAST_MS = Date.now();
 
 // one home for the house system — becomes state the day a selector exists
@@ -35,7 +38,7 @@ function App() {
   // The natal anchor: what the form last cast. Double-click tweens utcMs back here
   const [castMs, setCastMs] = useState(CAST_MS);
   // Where on Earth the chart is cast from — the form can change it, so it's state
-  const [city, setCity] = useState<City>(HOME_CITY);
+  const [city, setCity] = useState<City>(homeCity);
   // Aspect types the user has toggled off in the panel, e.g. { Square: true }
   const [aspectsOff, setAspectsOff] = useState<Record<string, boolean>>({});
   // Options-panel display toggles: zodiac band on/off, house numbering style
