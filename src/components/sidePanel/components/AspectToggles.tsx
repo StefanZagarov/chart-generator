@@ -1,4 +1,4 @@
-import { ASP_STYLE } from "../../chart/components/Aspects";
+import { ASP_COLOR } from "../../chart/components/Aspects";
 
 // One chip per aspect type, colored like its lines on the wheel. Clicking a chip
 // toggles that type off/on; an off chip renders faded and struck through, and the
@@ -17,15 +17,15 @@ export function AspectToggles({
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {Object.entries(ASP_STYLE).map(([type, style]) => {
+      {Object.entries(ASP_COLOR).map(([type, color]) => {
         const off = aspectsOff[type];
         return (
           <button
             key={type}
             onClick={() => onToggle(type)}
             style={{
-              borderColor: off ? "#a5906c" : style.color,
-              color: off ? "#a5906c" : style.color,
+              borderColor: off ? "#a5906c" : color,
+              color: off ? "#a5906c" : color,
             }}
             className={`flex items-center gap-1.5 border bg-cream/35 px-2 py-1 text-[11px] tracking-[0.06em] cursor-pointer ${
               off ? "opacity-50 line-through" : ""
@@ -34,7 +34,7 @@ export function AspectToggles({
             {/* little line swatch matching the chord's color */}
             <span
               className="inline-block w-3.5 border-t-2"
-              style={{ borderColor: off ? "#a5906c" : style.color }}
+              style={{ borderColor: off ? "#a5906c" : color }}
             />
             {type}
           </button>

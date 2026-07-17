@@ -116,11 +116,14 @@ function findAspects(planets: Planet[]): Aspect[] {
         b.name === "Moon"
           ? 1.5
           : 0;
-      let best: { type: AspectType; glyph: string; orb: number } | null = null;
+      let best:
+        | { type: AspectType; glyph: string; orb: number; maxOrb: number }
+        | null = null;
       for (const [type, glyph, angle, orb] of ASPECTS) {
         const d = Math.abs(sep - angle);
-        if (d <= orb + (MINOR[type] ? 0 : lum) && (!best || d < best.orb))
-          best = { type, glyph, orb: d };
+        const maxOrb = orb + (MINOR[type] ? 0 : lum);
+        if (d <= maxOrb && (!best || d < best.orb))
+          best = { type, glyph, orb: d, maxOrb };
       }
       if (best)
         aspects.push({
@@ -131,6 +134,7 @@ function findAspects(planets: Planet[]): Aspect[] {
           type: best.type,
           glyph: best.glyph,
           orb: best.orb,
+          maxOrb: best.maxOrb,
           orbLabel: fmtDM(best.orb),
           lon1: a.lon,
           lon2: b.lon,

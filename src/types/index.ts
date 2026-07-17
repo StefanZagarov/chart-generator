@@ -62,6 +62,9 @@ export interface Aspect {
   glyph: string;
   /** deviation from exact, degrees */
   orb: number;
+  /** the widest orb this aspect was allowed (base orb + any luminary bonus) —
+   * so the renderer can tell how close to the edge `orb` sits, per aspect */
+  maxOrb: number;
   orbLabel: string;
   lon1: number;
   lon2: number;
