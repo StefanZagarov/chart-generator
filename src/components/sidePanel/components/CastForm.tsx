@@ -110,17 +110,24 @@ export function CastForm({
   // biggest — picking from the dropdown must mean THAT one.
   const pickedCity = useRef<City | null>(null);
 
+  // Word-order-free matching: the query is split into tokens and each token
+  // must start one of the label's words — so "sofia bulgaria", "bulgaria sofia"
+  // and "bulg sof" all land on "Sofia, Bulgaria". The cheap substring test
+  // prescreens before the word-split so the 170k scan stays a few ms.
+  // An empty query matches everything → the first 8 rows, i.e. the world's
+  // biggest cities: that's what makes focusing the empty/selected field behave
+  // like opening a combobox.
   const suggest = (q: string): City[] => {
-    const s = q.trim().toLowerCase();
-    if (s.length < 2) return []; // one letter would always match a megacity
+    const tokens = q.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
     const out: City[] = [];
     for (const c of CITIES) {
-      if (
-        c.name.toLowerCase().startsWith(s) ||
-        c.label.toLowerCase().startsWith(s)
-      ) {
-        out.push(c);
-        if (out.length === 8) break;
+      const label = c.label.toLowerCase();
+      if (tokens.every((t) => label.includes(t))) {
+        const words = label.split(/[\s,]+/);
+        if (tokens.every((t) => words.some((w) => w.startsWith(t)))) {
+          out.push(c);
+          if (out.length === 8) break;
+        }
       }
     }
     return out;
@@ -325,6 +332,12 @@ export function CastForm({
               } else if (e.key === "Escape") {
                 setSuggestions([]);
               }
+            }}
+            // combobox feel: focusing opens the list (matches for the current
+            // text) and selects the text so typing starts a fresh search
+            onFocus={(e) => {
+              e.target.select();
+              setSuggestions(suggest(e.target.value));
             }}
             onBlur={() => setSuggestions([])}
             placeholder="Choose a city…"
