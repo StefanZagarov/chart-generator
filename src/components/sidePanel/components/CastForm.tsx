@@ -202,10 +202,14 @@ export function CastForm({
     // Assemble and validate the segments. The round-trip catches impossible
     // dates: 31/02 rolls over to March, so reading the parts back reveals the
     // mismatch. utcFromParts (not Date.UTC) so years 1–99 don't remap to 1900s.
+    // A short year is taken at face value — "12" means year 12, not 2012 — so
+    // ancient dates need no leading zeros; only the numeric range is enforced.
     const [d, mo, y] = [Number(day), Number(month), Number(year)];
     const roundTrip = new Date(utcFromParts(y, mo - 1, d));
     if (
-      year.length !== 4 ||
+      !year ||
+      y < 1 ||
+      y > 3002 ||
       !day ||
       !month ||
       roundTrip.getUTCFullYear() !== y ||
