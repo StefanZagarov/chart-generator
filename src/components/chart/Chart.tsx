@@ -59,6 +59,32 @@ export function Chart({
   const pendingDelta = useRef(0); // degrees swept since the last flush
   const rafPending = useRef(false); // is a flush already scheduled this frame?
 
+  // TEMP dev-only drag profiler: frame-to-frame gaps and onScrub (solver) cost,
+  // rolling last 120 frames, written straight into a plain DOM node — no React,
+  // so the meter can't distort what it measures. Read it while dragging.
+  const perf = useRef({ prev: 0, gaps: [] as number[], costs: [] as number[] });
+  const meter = (gap: number, cost: number) => {
+    const p = perf.current;
+    if (gap < 1000) p.gaps.push(gap); // ignore the pause between drags
+    p.costs.push(cost);
+    if (p.gaps.length > 120) p.gaps.shift();
+    if (p.costs.length > 120) p.costs.shift();
+    if (p.gaps.length % 10 !== 0 || p.gaps.length === 0) return;
+    const stats = (a: number[]) => {
+      const s = [...a].sort((x, y) => x - y);
+      return `avg ${(a.reduce((t, v) => t + v, 0) / a.length).toFixed(1)} p95 ${s[Math.floor(s.length * 0.95)].toFixed(1)} max ${s[s.length - 1].toFixed(1)}`;
+    };
+    let el = document.getElementById("perf-meter");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "perf-meter";
+      el.style.cssText =
+        "position:fixed;bottom:8px;right:8px;z-index:99;background:#222;color:#0f0;font:11px monospace;padding:6px 8px;white-space:pre;pointer-events:none";
+      document.body.appendChild(el);
+    }
+    el.textContent = `frame ms: ${stats(p.gaps)}\nscrub ms: ${stats(p.costs)}\nframes >20ms: ${p.gaps.filter((g) => g > 20).length}/${p.gaps.length}`;
+  };
+
   // Pointer's angle around the SVG's center, in degrees
   const angleOf = (e: React.PointerEvent) => {
     const rect = svgRef.current!.getBoundingClientRect();
@@ -107,7 +133,14 @@ export function Chart({
         rafPending.current = false;
         const total = pendingDelta.current;
         pendingDelta.current = 0;
-        if (total) onScrub(total);
+        if (import.meta.env.DEV) {
+          const now = performance.now();
+          const gap = perf.current.prev ? now - perf.current.prev : 0;
+          perf.current.prev = now;
+          const t0 = performance.now();
+          if (total) onScrub(total);
+          if (gap) meter(gap, performance.now() - t0);
+        } else if (total) onScrub(total);
       });
     }
   };
