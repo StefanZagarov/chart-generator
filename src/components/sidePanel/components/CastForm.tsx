@@ -170,10 +170,12 @@ export function CastForm({
     }
     return clamped;
   };
-  // Year clamps into the ephemeris's supported span [1, 2999] (no data beyond),
+  // Year clamps to whole years the ephemeris fully covers (its range ends
+  // mid-3003, so 3002 is the last complete year; earlier years back to the
+  // engine's 3002-BCE floor are only reachable by winding, not this CE field),
   // then re-checks the one date case only it can decide: 29/02 in a non-leap year
   const clampYear = (v: string) => {
-    const n = Math.min(2999, Math.max(1, Number(v)));
+    const n = Math.min(3002, Math.max(1, Number(v)));
     const clamped = String(n).padStart(4, "0");
     if (day && month === "02") {
       const max = new Date(Date.UTC(n, 2, 0)).getUTCDate();

@@ -6,20 +6,16 @@ import type { City, WallClock } from "../types/";
 
 // ---- Time range ----
 
-// The built-in Moshier ephemeris has no data outside roughly 3000 BCE–3000 CE;
-// past the edge it returns garbage/NaN positions and the chart render dies.
-// Every time change routes through clampTime, so no instant outside this window
-// ever reaches computeChart. Bounds sit a full year inside the documented edge
-// (…–3000 CE) so the boundary itself is never in question. The BCE end is
-// nowhere near real use, so year 1 CE is a safe, simple floor.
-// (Date.UTC maps years 0–99 to 1900s, so year 1 is built via setUTCFullYear.)
-export const MIN_UTC_MS = (() => {
-  const d = new Date(0);
-  d.setUTCFullYear(1, 0, 1);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.getTime();
-})();
-export const MAX_UTC_MS = Date.UTC(2999, 11, 31, 23, 59, 59, 999);
+// The built-in Moshier ephemeris throws for any date outside its Julian-day
+// range — past the edge computeChart dies mid-render and blanks the app. These
+// are the engine's EXACT limits (it reports "Moshier planet range 625000.5 ..
+// 2818000.5"), both empirically verified to compute a full chart inclusively:
+// 3002-02-03 BCE to 3003-04-29 CE. Every time change routes through clampTime,
+// so no instant outside this window ever reaches computeChart.
+const JD_EPOCH = 2440587.5; // Unix epoch as a Julian day (matches swiss.ts toJd)
+const jdToMs = (jd: number) => (jd - JD_EPOCH) * 86_400_000;
+export const MIN_UTC_MS = jdToMs(625000.5);
+export const MAX_UTC_MS = jdToMs(2818000.5);
 
 /** keep an instant inside the ephemeris's supported range */
 export const clampTime = (ms: number): number =>
