@@ -59,9 +59,12 @@ export function Chart({
   const pendingDelta = useRef(0); // degrees swept since the last flush
   const rafPending = useRef(false); // is a flush already scheduled this frame?
 
-  // TEMP dev-only drag profiler: frame-to-frame gaps and onScrub (solver) cost,
+  // Dev-only drag profiler: frame-to-frame gaps and onScrub (solver) cost,
   // rolling last 120 frames, written straight into a plain DOM node — no React,
-  // so the meter can't distort what it measures. Read it while dragging.
+  // so the meter can't distort what it measures. Flip the flag to investigate
+  // drag stutter; measured 2026-07-17: scrub ~0 ms, frames avg 21 ms on a
+  // 180 Hz panel in dev — the cost is React dev-mode render + WebKit paint.
+  const PROFILE_DRAG = false;
   const perf = useRef({ prev: 0, gaps: [] as number[], costs: [] as number[] });
   const meter = (gap: number, cost: number) => {
     const p = perf.current;
@@ -133,7 +136,7 @@ export function Chart({
         rafPending.current = false;
         const total = pendingDelta.current;
         pendingDelta.current = 0;
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && PROFILE_DRAG) {
           const now = performance.now();
           const gap = perf.current.prev ? now - perf.current.prev : 0;
           perf.current.prev = now;
