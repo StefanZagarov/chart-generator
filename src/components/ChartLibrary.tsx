@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { Modal } from "./Modal";
 import { MiniWheel } from "./chart/MiniWheel";
 import { prettyDate, wallClock } from "../engine/almanac";
 import type { Numerals, SavedChart } from "../types/";
 
 /** The Load window: one box per saved chart, each holding that chart's actual
- * rendered wheel. Clicking a box loads it into the app (App closes this modal
- * in its onLoad); the ✕ deletes without loading (stopPropagation keeps the two
- * gestures apart, same as the old list rows). */
+ * rendered wheel. Boxes come alphabetically (the vault keeps insertion order —
+ * an ordering fact of storage, not of reading) and the search field narrows by
+ * name or place as you type. Clicking a box loads it into the app (App closes
+ * this modal in its onLoad); the ✕ deletes without loading (stopPropagation
+ * keeps the two gestures apart, same as the old list rows). */
 export function ChartLibrary({
   charts,
   numerals,
@@ -20,16 +23,42 @@ export function ChartLibrary({
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const shown = charts
+    .filter(
+      (c) =>
+        !q ||
+        c.name.toLowerCase().includes(q) ||
+        c.city.label.toLowerCase().includes(q),
+    )
+    // localeCompare so "Ángela" files under A, not after Z
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <Modal title="Saved Charts" onClose={onClose}>
-      {charts.length === 0 && (
+      {charts.length === 0 ? (
         <div className="italic text-bronze text-center py-8">
           Nothing saved yet — cast a chart and press Save, or Import an AAF
           export.
         </div>
+      ) : (
+        <input
+          autoFocus
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name or place…"
+          className="w-full mb-4 bg-cream/60 border-0 border-b border-gold focus:border-ink outline-none px-1 py-1.5 text-[14.5px]"
+        />
+      )}
+      {charts.length > 0 && shown.length === 0 && (
+        <div className="italic text-bronze text-center py-8">
+          Nothing matches “{query.trim()}”.
+        </div>
       )}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-        {charts.map((c) => (
+        {shown.map((c) => (
           <div
             key={c.id}
             onClick={() => onLoad(c)}
