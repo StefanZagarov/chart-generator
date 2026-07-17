@@ -51,6 +51,19 @@ work once `webkit2gtk-4.1` is installed (the only missing system package).
    and produces installers. (Local `cargo check`/`tauri dev` verified after the
    user installs `webkit2gtk-4.1`.)
 
+## AppImage white-window fix (2026-07-17)
+
+First AppImage showed a white window on Arch: WebKit aborted with
+`Could not create default EGL display: EGL_BAD_PARAMETER`. Root cause (found by
+bisecting the bundled libs with remove/restore control tests): the bundler ships
+the build runner's Ubuntu 22.04 `libwayland-client.so.0`; the host's much newer
+Mesa loads that stale copy through the AppImage's `LD_LIBRARY_PATH` and its EGL
+init fails, killing the renderer. None of the `WEBKIT_*` env knobs touch this
+path. Fix: CI strips `libwayland-*` from the AppImage and repacks it with
+appimagetool — the host's libwayland (shipped by every desktop distro,
+ABI-stable) is used instead. Verified: repacked AppImage renders the full app
+on Arch/Hyprland. `.deb`/`.rpm` are unaffected (they use host WebKit/wayland).
+
 ## Later / out of scope
 
 - Code signing (Windows cert / macOS notarization).
