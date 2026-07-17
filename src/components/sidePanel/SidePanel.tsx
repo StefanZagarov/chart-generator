@@ -1,11 +1,11 @@
 import { offsetLabel } from "../../engine/almanac";
-import type { Chart, City, Numerals, SavedChart } from "../../types/";
+import type { Chart, City, Numerals } from "../../types/";
 import { CastForm } from "./components/CastForm";
 import { AspectToggles } from "./components/AspectToggles";
 import { WindTheClock } from "./components/WindTheClock";
 import { SelectedCard } from "./components/SelectedCard";
 import { PlanetList } from "./components/PlanetList";
-import { SavedCharts } from "./components/SavedCharts";
+import { VaultActions } from "./components/VaultActions";
 
 // The side panel logic
 // Logic: the panel owns no chart state at all — it's one more projection of the same chart the wheel draws, plus controls that report upward. State lives as low as possible but high enough that every reader sits below it: city and aspectsOff went to App (the wheel reads them), while the form's raw text strings stay inside CastForm (nothing outside cares what's typed, only what's cast). SidePanel itself is pure composition, like Chart.tsx: it computes one derived string (the tz label — offsetLabel needs utcMs because a city's UTC offset changes with DST) and passes each child its slice.
@@ -29,15 +29,14 @@ export function SidePanel({
   city,
   aspectsOff,
   numerals,
-  savedCharts,
   selected,
   onCast,
   onToggleAspect,
   onSelect,
   onSetTime,
   onSaveChart,
-  onLoadChart,
-  onDeleteChart,
+  onOpenLibrary,
+  onOpenImport,
 }: {
   chart: Chart;
   utcMs: number;
@@ -46,15 +45,14 @@ export function SidePanel({
   city: City;
   aspectsOff: Record<string, boolean>;
   numerals: Numerals;
-  savedCharts: SavedChart[];
   selected: string | null;
   onCast: (utcMs: number, city: City) => void;
   onToggleAspect: (type: string) => void;
   onSelect: (name: string | null) => void;
   onSetTime: (ms: number) => void;
   onSaveChart: (name: string) => void;
-  onLoadChart: (chart: SavedChart) => void;
-  onDeleteChart: (id: string) => void;
+  onOpenLibrary: () => void;
+  onOpenImport: () => void;
 }) {
   // the selected planet's full record + the aspects it participates in —
   // derived here so SelectedCard stays a dumb display component
@@ -65,7 +63,12 @@ export function SidePanel({
     ? chart.aspects.filter((a) => a.p1 === selected || a.p2 === selected)
     : [];
   return (
-    <aside className="flex-none w-[332px] h-full overflow-y-auto border-r-[3px] border-double border-gold px-6 pt-6 pb-4 flex flex-col gap-4">
+    <aside className="relative flex-none w-[332px] h-full overflow-y-auto border-r-[3px] border-double border-gold px-6 pt-6 pb-4 flex flex-col gap-4">
+      <VaultActions
+        onSave={onSaveChart}
+        onOpenLibrary={onOpenLibrary}
+        onOpenImport={onOpenImport}
+      />
       {/* Header */}
       <div className="text-center">
         <div className="text-xs tracking-[0.5em] text-bronze">✦ ✦ ✦</div>
@@ -96,14 +99,6 @@ export function SidePanel({
 
       <Divider label="WIND THE CLOCK" />
       <WindTheClock utcMs={utcMs} onSetTime={onSetTime} />
-
-      <Divider label="SAVED CHARTS" />
-      <SavedCharts
-        charts={savedCharts}
-        onSave={onSaveChart}
-        onLoad={onLoadChart}
-        onDelete={onDeleteChart}
-      />
 
       {selectedPlanet && (
         <SelectedCard

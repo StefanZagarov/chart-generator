@@ -87,3 +87,21 @@ export async function deleteChart(id: string): Promise<SavedChart[]> {
   const charts = await listCharts();
   return persist(charts.filter((s) => s.id !== id));
 }
+
+/** Batch upsert (AAF import): same by-name rule as saveChart, but one read and
+ * one write for the whole batch instead of a disk round-trip per person. */
+export async function importCharts(
+  batch: Omit<SavedChart, "id" | "savedAt">[],
+): Promise<SavedChart[]> {
+  const charts = await listCharts();
+  const byName = new Map(charts.map((s) => [s.name, s] as const));
+  for (const c of batch) {
+    const existing = byName.get(c.name);
+    byName.set(c.name, {
+      ...c,
+      id: existing?.id ?? crypto.randomUUID(),
+      savedAt: Date.now(),
+    });
+  }
+  return persist([...byName.values()]);
+}

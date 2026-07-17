@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { Chart } from "./components/chart/Chart";
 import { SidePanel } from "./components/sidePanel/SidePanel";
 import { OptionsPanel } from "./components/OptionsPanel";
+import { ChartLibrary } from "./components/ChartLibrary";
+import { ImportDialog } from "./components/ImportDialog";
 import { computeChart } from "./engine/swiss";
 import { CITIES, findCity, prettyDate, wallClock } from "./engine/almanac";
-import { deleteChart, listCharts, saveChart } from "./lib/chartVault";
+import { deleteChart, importCharts, listCharts, saveChart } from "./lib/chartVault";
+import { parseAAF } from "./lib/aaf";
 import { scrub } from "./lib/scrubTime";
 import { useTween } from "./hooks/useTween";
 import type { City, HouseSystem, Numerals, SavedChart } from "./types/";
@@ -42,6 +45,8 @@ function App() {
   useEffect(() => {
     listCharts().then(setSaved);
   }, []);
+  // which vault window is open: the gallery (Load), the AAF paste (Import), or none
+  const [dialog, setDialog] = useState<"library" | "import" | null>(null);
   // The clicked planet (wheel glyph or panel row), or null
   const [selected, setSelected] = useState<string | null>(null);
   // The clicked aspect line as a "p1|p2" key, or null. Planet and aspect
@@ -62,6 +67,15 @@ function App() {
     setCity(c.city);
     setUtcMs(c.castMs);
     setCastMs(c.castMs);
+    setDialog(null); // picking a chart is what the library window is FOR
+  };
+
+  // Import window plumbing: parse the paste, vault whatever parsed, and hand
+  // the dialog its report — it decides whether to close (clean) or show errors
+  const importText = async (text: string) => {
+    const { charts, errors } = parseAAF(text, HOUSE_SYSTEM);
+    if (charts.length > 0) setSaved(await importCharts(charts));
+    return { added: charts.length, errors };
   };
 
   // Everything that should stay bright while a selection is active: a selected
@@ -108,7 +122,6 @@ function App() {
         city={city}
         aspectsOff={aspectsOff}
         numerals={numerals}
-        savedCharts={saved}
         selected={selected}
         onCast={(ms, castCity) => {
           returnTween.cancel();
@@ -136,8 +149,8 @@ function App() {
             houseSystem: HOUSE_SYSTEM,
           }).then(setSaved)
         }
-        onLoadChart={loadChart}
-        onDeleteChart={(id) => deleteChart(id).then(setSaved)}
+        onOpenLibrary={() => setDialog("library")}
+        onOpenImport={() => setDialog("import")}
       />
       {/* select-none: belt to the preventDefault suspenders in Chart — the
           wheel's numerals/labels and the footer must never highlight mid-drag */}
@@ -197,6 +210,18 @@ function App() {
           setNumerals((n) => (n === "roman" ? "arabic" : "roman"))
         }
       />
+      {dialog === "library" && (
+        <ChartLibrary
+          charts={saved}
+          numerals={numerals}
+          onLoad={loadChart}
+          onDelete={(id) => deleteChart(id).then(setSaved)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "import" && (
+        <ImportDialog onImport={importText} onClose={() => setDialog(null)} />
+      )}
     </div>
   );
 }

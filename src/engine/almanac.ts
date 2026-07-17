@@ -266,6 +266,27 @@ export const CITIES: City[] = RAW.map(([label, lat, lon, tz]) => ({
   tz,
 }));
 
+/** Nearest listed city to a coordinate — for display labels and tz guesses.
+ * Squared equirectangular distance is plenty to pick a winner: latitude
+ * degrees are constant-size, longitude degrees shrink by cos(lat), and the
+ * wrap at ±180° is folded to the short way around. */
+export function nearestCity(lat: number, lon: number): City {
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  let best = CITIES[0];
+  let bestDist = Infinity;
+  for (const c of CITIES) {
+    const dLat = c.lat - lat;
+    let dLon = Math.abs(c.lon - lon);
+    if (dLon > 180) dLon = 360 - dLon;
+    const dist = dLat * dLat + dLon * cosLat * (dLon * cosLat);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = c;
+    }
+  }
+  return best;
+}
+
 /** exact label match first, then prefix, then substring — first hit wins */
 export function findCity(q: string): City | null {
   if (!q) return null;

@@ -1,6 +1,12 @@
 import { useRef, useState } from "react";
 import type { RefObject } from "react";
-import { CITIES, findCity, localToUTC, wallClock } from "../../../engine/almanac";
+import {
+  CITIES,
+  findCity,
+  localToUTC,
+  nearestCity,
+  wallClock,
+} from "../../../engine/almanac";
 import type { City } from "../../../types/";
 
 // The birth-data form. Owns its field strings locally — they're just text until
@@ -177,27 +183,6 @@ export function CastForm({
 
     const { utcMs } = localToUTC(`${year}-${mm}-${dd}`, `${hh}:${mi}`, found.tz);
     onCast(utcMs, found);
-  };
-
-  // Nearest listed city to a coordinate — for the display label only.
-  // Squared equirectangular distance is plenty to pick a winner: latitude
-  // degrees are constant-size, longitude degrees shrink by cos(lat), and the
-  // wrap at ±180° is folded to the short way around.
-  const nearestCity = (lat: number, lon: number): City => {
-    const cosLat = Math.cos((lat * Math.PI) / 180);
-    let best = CITIES[0];
-    let bestDist = Infinity;
-    for (const c of CITIES) {
-      const dLat = c.lat - lat;
-      let dLon = Math.abs(c.lon - lon);
-      if (dLon > 180) dLon = 360 - dLon;
-      const dist = dLat * dLat + dLon * cosLat * (dLon * cosLat);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = c;
-      }
-    }
-    return best;
   };
 
   // "Now" = the cast gate driven backwards: take the current instant, ask wallClock
