@@ -42,12 +42,13 @@ export function ChartLibrary({
 
   return (
     <Modal
-      // "Saved Charts · 131", or "· 7 of 131" while a search narrows the grid
-      title={`Saved Charts · ${
+      title="Saved Charts"
+      // "131 items" on the right, "7 of 131 items" while a search narrows
+      aside={
         shown.length === charts.length
-          ? charts.length
-          : `${shown.length} of ${charts.length}`
-      }`}
+          ? `${charts.length} item${charts.length === 1 ? "" : "s"}`
+          : `${shown.length} of ${charts.length} items`
+      }
       onClose={onClose}
     >
       {charts.length === 0 ? (

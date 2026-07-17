@@ -7,10 +7,13 @@ import type { ReactNode } from "react";
  * dialog never slams the window shut. */
 export function Modal({
   title,
+  aside,
   onClose,
   children,
 }: {
   title: string;
+  /** small right-aligned note in the header, next to the close button */
+  aside?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -31,12 +34,17 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[86svh] w-[min(880px,92vw)] overflow-y-auto border-[3px] border-double border-gold bg-parchment-50 px-7 py-6 shadow-xl"
       >
-        <div className="flex items-baseline justify-between mb-4">
+        <div className="flex items-baseline gap-3 mb-4">
           <div className="font-fell text-[24px]">{title}</div>
+          {aside && (
+            <div className="ml-auto text-[11.5px] italic tracking-[0.08em] text-bronze">
+              {aside}
+            </div>
+          )}
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-bronze hover:text-rust bg-transparent border-0 cursor-pointer text-[15px] px-1"
+            className={`${aside ? "" : "ml-auto "}text-bronze hover:text-rust bg-transparent border-0 cursor-pointer text-[15px] px-1`}
           >
             ✕
           </button>
