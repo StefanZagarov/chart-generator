@@ -10,12 +10,14 @@ import type { Numerals, Polar, SavedChart } from "../../types/";
  * data, minus every interaction — no drag, no selection, no handlers. It reuses
  * the same presentational components the live wheel uses, so a saved chart's
  * box always looks exactly like what loading it will show. Cheap enough to
- * render a gallery of them: one computeChart is ~0.3 ms. */
+ * render a gallery of them: one computeChart is ~0.3 ms. Also serialized to
+ * markup at save time (lib/wheelImage) to become the save's cached image. */
 export function MiniWheel({
   saved,
   numerals,
 }: {
-  saved: SavedChart;
+  /** only the cast fields — callers may not have a full SavedChart yet */
+  saved: Pick<SavedChart, "castMs" | "city" | "houseSystem">;
   numerals: Numerals;
 }) {
   const chart = computeChart(

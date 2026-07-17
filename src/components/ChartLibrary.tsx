@@ -78,7 +78,14 @@ export function ChartLibrary({
             onClick={() => onLoad(c)}
             className="group relative border border-gold bg-cream/60 p-2.5 cursor-pointer hover:border-ink transition-colors"
           >
-            <MiniWheel saved={c} numerals={numerals} />
+            {c.image ? (
+              // the wheel as it looked when saved — markup we rendered
+              // ourselves at save time, injected instead of recomputed
+              <div dangerouslySetInnerHTML={{ __html: c.image }} />
+            ) : (
+              // old saves and mirror-restored ones carry no image — compute live
+              <MiniWheel saved={c} numerals={numerals} />
+            )}
             <div className="mt-2 text-center">
               <div className="text-[14.5px] truncate">{c.name}</div>
               <div className="text-[11.5px] italic text-bronze truncate">

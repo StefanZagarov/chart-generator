@@ -23,8 +23,14 @@ const readMirror = (): SavedChart[] => {
     return []; // a hand-mangled mirror must not brick the app
   }
 };
+// The mirror carries the DATA, never the cached images: ~50 KB of SVG per
+// chart would hit localStorage's ~5 MB quota within a hundred saves. A save
+// restored from the mirror just renders its preview live instead.
 const writeMirror = (charts: SavedChart[]) =>
-  localStorage.setItem(KEY, JSON.stringify(charts));
+  localStorage.setItem(
+    KEY,
+    JSON.stringify(charts.map(({ image: _, ...data }) => data)),
+  );
 
 // load() opens the file on first call and returns the same cached resource
 // after — calling it per operation costs nothing and dodges init-order issues

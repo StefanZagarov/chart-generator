@@ -119,4 +119,9 @@ export interface SavedChart {
   city: City;
   houseSystem: HouseSystem;
   savedAt: number;
+  /** the wheel as rendered at save time — SVG markup cached so the library
+   * shows saves without recomputing them. Optional: absent on old saves and
+   * in the localStorage mirror (it would blow the quota); the library then
+   * computes the preview live instead. */
+  image?: string;
 }
