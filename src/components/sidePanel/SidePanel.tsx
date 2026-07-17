@@ -1,4 +1,4 @@
-import { offsetLabel } from "../../engine/almanac";
+import { coordLabel } from "../../engine/almanac";
 import type { Chart, City, Numerals } from "../../types/";
 import { CastForm } from "./components/CastForm";
 import { AspectToggles } from "./components/AspectToggles";
@@ -78,7 +78,7 @@ export function SidePanel({
         key={`${castMs}-${city.label}`}
         city={city}
         initialMs={castMs}
-        tzLabel={`${city.tz} · ${offsetLabel(city.tz, utcMs)}`}
+        coordsLabel={coordLabel(city.lat, city.lon)}
         onCast={onCast}
       />
 

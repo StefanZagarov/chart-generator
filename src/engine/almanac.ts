@@ -266,6 +266,23 @@ export const CITIES: City[] = RAW.map(([label, lat, lon, tz]) => ({
   tz,
 }));
 
+/** "42°42′N, 23°19′E" — degree-and-minute coordinates with hemisphere letters.
+ * Minutes are rounded, and 60′ carries into the degree (the offsetLabel lesson:
+ * never split a fractional value and round the halves separately). */
+export function coordLabel(lat: number, lon: number): string {
+  const part = (v: number, pos: string, neg: string) => {
+    const a = Math.abs(v);
+    let d = Math.floor(a);
+    let m = Math.round((a - d) * 60);
+    if (m === 60) {
+      d += 1;
+      m = 0;
+    }
+    return `${d}°${pad2(m)}′${v < 0 ? neg : pos}`;
+  };
+  return `${part(lat, "N", "S")}, ${part(lon, "E", "W")}`;
+}
+
 /** Nearest listed city to a coordinate — for display labels and tz guesses.
  * Squared equirectangular distance is plenty to pick a winner: latitude
  * degrees are constant-size, longitude degrees shrink by cos(lat), and the

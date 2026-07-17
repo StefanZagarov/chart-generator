@@ -73,13 +73,14 @@ const clampNum = (v: string, min: number, max: number) =>
 export function CastForm({
   city,
   initialMs,
-  tzLabel,
+  coordsLabel,
   onCast,
 }: {
   city: City;
   /** the cast this form should display — fields are derived from it ONCE */
   initialMs: number;
-  tzLabel: string;
+  /** "42°42′N, 23°19′E" — the cast city's coordinates, shown under the place */
+  coordsLabel: string;
   onCast: (utcMs: number, city: City) => void;
 }) {
   // The fields are useState INITIALIZERS, not bindings: they read initialMs on
@@ -276,7 +277,7 @@ export function CastForm({
           ))}
         </datalist>
         <div className="flex justify-between mt-1">
-          <div className="text-[12.5px] italic text-bronze">{tzLabel}</div>
+          <div className="text-[12.5px] italic text-bronze">{coordsLabel}</div>
           <div className="text-[12.5px] italic text-rust">{error}</div>
         </div>
       </label>
