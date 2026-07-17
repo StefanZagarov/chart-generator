@@ -12,7 +12,13 @@ import { parseAAF } from "./lib/aaf";
 import { wheelImage } from "./lib/wheelImage";
 import { scrub } from "./lib/scrubTime";
 import { useTween } from "./hooks/useTween";
-import type { City, HouseSystem, Numerals, SavedChart } from "./types/";
+import type {
+  City,
+  HouseSystem,
+  Numerals,
+  PlanetName,
+  SavedChart,
+} from "./types/";
 
 // Startup anchor: the moment the app was opened, placed in the machine's own
 // timezone — the OS already knows its IANA zone, and City.tz holds the same
@@ -49,9 +55,20 @@ function App() {
   const [city, setCity] = useState<City>(homeCity);
   // Aspect types the user has toggled off in the panel, e.g. { Square: true }
   const [aspectsOff, setAspectsOff] = useState<Record<string, boolean>>({});
-  // Options-panel display toggles: zodiac band on/off, house numbering style
+  // Options-panel display toggles: zodiac band on/off, house numbering style,
+  // glyph coloring, and which outer planets are hidden
   const [showSigns, setShowSigns] = useState(true);
   const [numerals, setNumerals] = useState<Numerals>("roman");
+  const [planetColors, setPlanetColors] = useState(false);
+  const [zodiacColors, setZodiacColors] = useState(false);
+  const [hidden, setHidden] = useState<ReadonlySet<PlanetName>>(new Set());
+  const togglePlanet = (name: PlanetName) =>
+    setHidden((h) => {
+      const next = new Set(h);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
   // The vault's list — starts empty, filled from storage once on mount (a real
   // file read on desktop, so it's async and arrives just after first paint)
   const [saved, setSaved] = useState<SavedChart[]>([]);
@@ -74,6 +91,21 @@ function App() {
   const returnTween = useTween(setUtcMs);
 
   const chart = computeChart(utcMs, city.lat, city.lon, HOUSE_SYSTEM);
+
+  // Hidden outer planets drop out entirely — off the wheel, out of the aspect
+  // web, and out of the panel list. Unlike aspectsOff (which hides lines but
+  // keeps the data), a hidden planet is gone everywhere, so this filtering
+  // happens once here and both the wheel and the panel read the result.
+  const visible =
+    hidden.size === 0
+      ? chart
+      : {
+          ...chart,
+          planets: chart.planets.filter((p) => !hidden.has(p.name)),
+          aspects: chart.aspects.filter(
+            (a) => !hidden.has(a.p1) && !hidden.has(a.p2),
+          ),
+        };
 
   // Loading reaches exactly the state casting reaches (city + both times),
   // plus the tween cancel every manual input performs. Moving castMs re-keys
@@ -107,7 +139,7 @@ function App() {
   const related = selected
     ? new Set(
         [selected].concat(
-          chart.aspects
+          visible.aspects
             .filter((a) => a.p1 === selected || a.p2 === selected)
             .map((a) => (a.p1 === selected ? a.p2 : a.p1)),
         ),
@@ -132,19 +164,20 @@ function App() {
   // list. The wheel's Aspects component draws whatever list it's given — it has no
   // idea toggles exist. Hiding stays a presentation concern, owned here.
   const chartView = {
-    ...chart,
-    aspects: chart.aspects.filter((a) => !aspectsOff[a.type]),
+    ...visible,
+    aspects: visible.aspects.filter((a) => !aspectsOff[a.type]),
   };
 
   return (
     <div className="w-full h-svh flex">
       <SidePanel
-        chart={chart}
+        chart={visible}
         utcMs={utcMs}
         castMs={castMs}
         city={city}
         aspectsOff={aspectsOff}
         numerals={numerals}
+        planetColors={planetColors}
         selected={selected}
         onCast={(ms, castCity) => {
           returnTween.cancel();
@@ -184,6 +217,8 @@ function App() {
           chart={chartView}
           showSigns={showSigns}
           numerals={numerals}
+          planetColors={planetColors}
+          zodiacColors={zodiacColors}
           selected={selected}
           selectedAspect={selectedAspect}
           related={related}
@@ -242,10 +277,16 @@ function App() {
       <OptionsPanel
         showSigns={showSigns}
         numerals={numerals}
+        planetColors={planetColors}
+        zodiacColors={zodiacColors}
+        hidden={hidden}
         onToggleSigns={() => setShowSigns((s) => !s)}
         onToggleNumerals={() =>
           setNumerals((n) => (n === "roman" ? "arabic" : "roman"))
         }
+        onTogglePlanetColors={() => setPlanetColors((c) => !c)}
+        onToggleZodiacColors={() => setZodiacColors((c) => !c)}
+        onTogglePlanet={togglePlanet}
       />
       {dialog === "library" && (
         <ChartLibrary

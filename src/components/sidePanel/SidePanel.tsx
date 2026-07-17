@@ -28,6 +28,7 @@ export function SidePanel({
   city,
   aspectsOff,
   numerals,
+  planetColors,
   selected,
   onCast,
   onToggleAspect,
@@ -41,6 +42,7 @@ export function SidePanel({
   city: City;
   aspectsOff: Record<string, boolean>;
   numerals: Numerals;
+  planetColors: boolean;
   selected: string | null;
   onCast: (utcMs: number, city: City) => void;
   onToggleAspect: (type: string) => void;
@@ -102,6 +104,7 @@ export function SidePanel({
         ascLabel={chart.ascLabel}
         mcLabel={chart.mcLabel}
         numerals={numerals}
+        planetColors={planetColors}
         selected={selected}
         onSelect={onSelect}
       />

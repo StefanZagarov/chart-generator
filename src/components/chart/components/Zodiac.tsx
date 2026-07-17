@@ -15,7 +15,24 @@ const SIGN_GLYPHS = [
   "♓︎",
 ];
 
-export function Zodiac({ polarPoint }: { polarPoint: Polar }) {
+// Optional per-sign colors (toggle in the options drawer), by classical element.
+// A sign's element cycles every 4 signs: Aries=fire, Taurus=earth, Gemini=air,
+// Cancer=water, then repeat — so element = signIndex % 4.
+const ELEMENT_COLOR = [
+  "#b32d14", // fire  — red
+  "#1d8a44", // earth — green
+  "#e0851f", // air   — orange
+  "#1d4e89", // water — blue
+];
+
+export function Zodiac({
+  polarPoint,
+  colors,
+}: {
+  polarPoint: Polar;
+  /** tint each sign glyph by its element instead of plain ink */
+  colors: boolean;
+}) {
   return (
     <g>
       {/* Zodiac separators */}
@@ -47,7 +64,7 @@ export function Zodiac({ polarPoint }: { polarPoint: Polar }) {
             textAnchor="middle"
             dominantBaseline="central"
             fontSize={33}
-            fill="#4a3826"
+            fill={colors ? ELEMENT_COLOR[signIndex % 4] : "#4a3826"}
           >
             {glyph}
           </text>

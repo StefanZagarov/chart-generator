@@ -58,7 +58,7 @@ export function MiniWheel({
       <circle r={418} fill="none" stroke="#4a3826" strokeWidth={0.8} />
       <circle r={402} fill="none" stroke="#4a3826" strokeWidth={0.5} />
       <circle r={240} fill="none" stroke="#4a3826" strokeWidth={0.9} />
-      <Zodiac polarPoint={polarPoint} />
+      <Zodiac polarPoint={polarPoint} colors={false} />
       <Ticks polarPoint={polarPoint} />
       <Houses
         polarPoint={polarPoint}
@@ -75,6 +75,7 @@ export function MiniWheel({
       <Planets
         polarPoint={polarPoint}
         planets={chart.planets}
+        colors={false}
         selected={null}
         related={null}
       />

@@ -1,4 +1,5 @@
 import { houseLabel } from "../../chart/components/Houses";
+import { PLANET_COLOR } from "../../chart/components/Planets";
 import type { Numerals, Planet } from "../../../types/";
 
 // One row per body: glyph | name (+ ℞ when retrograde) | position | house numeral.
@@ -14,6 +15,7 @@ export function PlanetList({
   ascLabel,
   mcLabel,
   numerals,
+  planetColors,
   selected,
   onSelect,
 }: {
@@ -21,6 +23,7 @@ export function PlanetList({
   ascLabel: string;
   mcLabel: string;
   numerals: Numerals;
+  planetColors: boolean;
   selected: string | null;
   onSelect: (name: string | null) => void;
 }) {
@@ -58,7 +61,12 @@ export function PlanetList({
             selected === planet.name ? "bg-rust/10" : ""
           }`}
         >
-          <span className="text-[17px]">{planet.glyph}</span>
+          <span
+            className="text-[17px]"
+            style={planetColors ? { color: PLANET_COLOR[planet.name] } : undefined}
+          >
+            {planet.glyph}
+          </span>
           <span className="text-[14.5px]">
             {planet.name}{" "}
             {planet.retro && (

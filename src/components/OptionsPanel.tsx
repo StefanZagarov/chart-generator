@@ -1,5 +1,9 @@
 import { useState } from "react";
-import type { Numerals } from "../types/";
+import type { Numerals, PlanetName } from "../types/";
+
+// the outer planets that can be toggled off — modern bodies traditional
+// astrology works without, so hiding them declutters the wheel
+const OUTER: PlanetName[] = ["Uranus", "Neptune", "Pluto"];
 
 /** The cog-wheel options drawer, top right — the Hyprtimer mechanic in parchment
  * clothes. Closed: cog + "−". Open: cog + "<", and the panel slides in from the
@@ -73,13 +77,26 @@ function Row({
 export function OptionsPanel({
   showSigns,
   numerals,
+  planetColors,
+  zodiacColors,
+  hidden,
   onToggleSigns,
   onToggleNumerals,
+  onTogglePlanetColors,
+  onToggleZodiacColors,
+  onTogglePlanet,
 }: {
   showSigns: boolean;
   numerals: Numerals;
+  planetColors: boolean;
+  zodiacColors: boolean;
+  /** which outer planets are currently hidden */
+  hidden: ReadonlySet<PlanetName>;
   onToggleSigns: () => void;
   onToggleNumerals: () => void;
+  onTogglePlanetColors: () => void;
+  onToggleZodiacColors: () => void;
+  onTogglePlanet: (name: PlanetName) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -108,10 +125,30 @@ export function OptionsPanel({
           onClick={onToggleSigns}
         />
         <Row
+          label="Zodiac colors"
+          value={zodiacColors ? "On" : "Off"}
+          onClick={onToggleZodiacColors}
+        />
+        <Row
           label="House numerals"
           value={numerals === "roman" ? "Roman" : "Arabic"}
           onClick={onToggleNumerals}
         />
+        <Row
+          label="Planet colors"
+          value={planetColors ? "On" : "Off"}
+          onClick={onTogglePlanetColors}
+        />
+        {/* hairline break before the per-planet visibility toggles */}
+        <div className="border-t border-gold/50 -mx-1 mt-0.5" />
+        {OUTER.map((name) => (
+          <Row
+            key={name}
+            label={name}
+            value={hidden.has(name) ? "Hidden" : "Shown"}
+            onClick={() => onTogglePlanet(name)}
+          />
+        ))}
       </div>
     </div>
   );

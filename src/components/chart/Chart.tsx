@@ -11,6 +11,8 @@ export function Chart({
   chart,
   showSigns,
   numerals,
+  planetColors,
+  zodiacColors,
   selected,
   selectedAspect,
   related,
@@ -25,6 +27,10 @@ export function Chart({
   showSigns: boolean;
   /** options-panel toggle: house numbering style */
   numerals: Numerals;
+  /** options-panel toggle: tint planet glyphs by PLANET_COLOR */
+  planetColors: boolean;
+  /** options-panel toggle: tint sign glyphs by element */
+  zodiacColors: boolean;
   /** name of the selected planet, or null */
   selected: string | null;
   /** "p1|p2" key of the selected aspect line, or null */
@@ -233,7 +239,7 @@ export function Chart({
 
       {/* toggled off, the whole band (glyphs + separators) goes — the ring
           circles above stay, so the wheel keeps its silhouette */}
-      {showSigns && <Zodiac polarPoint={polarPoint} />}
+      {showSigns && <Zodiac polarPoint={polarPoint} colors={zodiacColors} />}
       <Ticks polarPoint={polarPoint} />
       <Houses
         polarPoint={polarPoint}
@@ -250,6 +256,7 @@ export function Chart({
       <Planets
         polarPoint={polarPoint}
         planets={chart.planets}
+        colors={planetColors}
         selected={selected}
         related={related}
       />
