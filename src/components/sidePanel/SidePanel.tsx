@@ -1,10 +1,11 @@
 import { offsetLabel } from "../../engine/almanac";
-import type { Chart, City } from "../../types/";
+import type { Chart, City, Numerals, SavedChart } from "../../types/";
 import { CastForm } from "./components/CastForm";
 import { AspectToggles } from "./components/AspectToggles";
 import { WindTheClock } from "./components/WindTheClock";
 import { SelectedCard } from "./components/SelectedCard";
 import { PlanetList } from "./components/PlanetList";
+import { SavedCharts } from "./components/SavedCharts";
 
 // The side panel logic
 // Logic: the panel owns no chart state at all — it's one more projection of the same chart the wheel draws, plus controls that report upward. State lives as low as possible but high enough that every reader sits below it: city and aspectsOff went to App (the wheel reads them), while the form's raw text strings stay inside CastForm (nothing outside cares what's typed, only what's cast). SidePanel itself is pure composition, like Chart.tsx: it computes one derived string (the tz label — offsetLabel needs utcMs because a city's UTC offset changes with DST) and passes each child its slice.
@@ -24,23 +25,36 @@ function Divider({ label }: { label: string }) {
 export function SidePanel({
   chart,
   utcMs,
+  castMs,
   city,
   aspectsOff,
+  numerals,
+  savedCharts,
   selected,
   onCast,
   onToggleAspect,
   onSelect,
   onSetTime,
+  onSaveChart,
+  onLoadChart,
+  onDeleteChart,
 }: {
   chart: Chart;
   utcMs: number;
+  /** the anchor the form displays — also its remount key, see CastForm */
+  castMs: number;
   city: City;
   aspectsOff: Record<string, boolean>;
+  numerals: Numerals;
+  savedCharts: SavedChart[];
   selected: string | null;
   onCast: (utcMs: number, city: City) => void;
   onToggleAspect: (type: string) => void;
   onSelect: (name: string | null) => void;
   onSetTime: (ms: number) => void;
+  onSaveChart: (name: string) => void;
+  onLoadChart: (chart: SavedChart) => void;
+  onDeleteChart: (id: string) => void;
 }) {
   // the selected planet's full record + the aspects it participates in —
   // derived here so SelectedCard stays a dumb display component
@@ -65,8 +79,14 @@ export function SidePanel({
         <div className="border-t border-b border-gold h-[5px] mt-3" />
       </div>
 
+      {/* the key is the reset mechanism: casting, Now, or loading a saved chart
+          all move castMs (or city) → new key → remount → field initializers
+          re-run against the new anchor. Typing changes neither, so the form is
+          never reset under the user's hands. */}
       <CastForm
+        key={`${castMs}-${city.label}`}
         city={city}
+        initialMs={castMs}
         tzLabel={`${city.tz} · ${offsetLabel(city.tz, utcMs)}`}
         onCast={onCast}
       />
@@ -77,8 +97,20 @@ export function SidePanel({
       <Divider label="WIND THE CLOCK" />
       <WindTheClock utcMs={utcMs} onSetTime={onSetTime} />
 
+      <Divider label="SAVED CHARTS" />
+      <SavedCharts
+        charts={savedCharts}
+        onSave={onSaveChart}
+        onLoad={onLoadChart}
+        onDelete={onDeleteChart}
+      />
+
       {selectedPlanet && (
-        <SelectedCard planet={selectedPlanet} aspects={selectedAspects} />
+        <SelectedCard
+          planet={selectedPlanet}
+          aspects={selectedAspects}
+          numerals={numerals}
+        />
       )}
 
       <Divider label="PLANETS" />
@@ -86,6 +118,7 @@ export function SidePanel({
         planets={chart.planets}
         ascLabel={chart.ascLabel}
         mcLabel={chart.mcLabel}
+        numerals={numerals}
         selected={selected}
         onSelect={onSelect}
       />

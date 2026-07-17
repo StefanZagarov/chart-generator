@@ -66,19 +66,31 @@ const clampNum = (v: string, min: number, max: number) =>
 
 export function CastForm({
   city,
+  initialMs,
   tzLabel,
   onCast,
 }: {
   city: City;
+  /** the cast this form should display — fields are derived from it ONCE */
+  initialMs: number;
   tzLabel: string;
   onCast: (utcMs: number, city: City) => void;
 }) {
-  const [day, setDay] = useState("14");
-  const [month, setMonth] = useState("03");
-  const [year, setYear] = useState("1992");
-  const [hour, setHour] = useState("07");
-  const [minute, setMinute] = useState("45");
-  const [place, setPlace] = useState("New York, USA");
+  // The fields are useState INITIALIZERS, not bindings: they read initialMs on
+  // the first render only, then typing owns them. Resetting the form from
+  // outside (loading a saved chart, casting, Now) happens by remount — App keys
+  // this component on (castMs, city), so any moved anchor is a "new" form whose
+  // initializers re-run. That keeps the contract above: the form always
+  // displays what was cast, yet is never reset mid-edit by a render.
+  const wc = wallClock(city.tz, initialMs); // "YYYY-MM-DD" / "HH:MM"
+  const [initYear, initMonth, initDay] = wc.date.split("-");
+  const [initHour, initMinute] = wc.time.split(":");
+  const [day, setDay] = useState(initDay);
+  const [month, setMonth] = useState(initMonth);
+  const [year, setYear] = useState(initYear);
+  const [hour, setHour] = useState(initHour);
+  const [minute, setMinute] = useState(initMinute);
+  const [place, setPlace] = useState(city.label);
   const [error, setError] = useState("");
 
   const dayRef = useRef<HTMLInputElement>(null);

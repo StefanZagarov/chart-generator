@@ -1,5 +1,5 @@
-import { ROMAN_NUMERALS } from "../../chart/components/Houses";
-import type { Aspect, Planet } from "../../../types/";
+import { houseLabel } from "../../chart/components/Houses";
+import type { Aspect, Numerals, Planet } from "../../../types/";
 
 // Detail card for the selected planet: name line, position line, then one row
 // per aspect it makes — the same data the wheel is highlighting at this moment,
@@ -7,9 +7,11 @@ import type { Aspect, Planet } from "../../../types/";
 export function SelectedCard({
   planet,
   aspects,
+  numerals,
 }: {
   planet: Planet;
   aspects: Aspect[];
+  numerals: Numerals;
 }) {
   return (
     <div className="border border-gold bg-cream/50 px-3.5 py-3">
@@ -18,7 +20,7 @@ export function SelectedCard({
         {planet.retro && <span className="text-rust text-sm"> ℞</span>}
       </div>
       <div className="italic text-umber text-sm mt-0.5 mb-2">
-        In {planet.signName} · House {ROMAN_NUMERALS[planet.house - 1]} ·{" "}
+        In {planet.signName} · House {houseLabel(planet.house - 1, numerals)} ·{" "}
         {planet.degLabel}
       </div>
       {/* One row per aspect: the aspect's own glyph (☌, □, △…), its name, then

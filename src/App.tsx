@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chart } from "./components/chart/Chart";
 import { SidePanel } from "./components/sidePanel/SidePanel";
+import { OptionsPanel } from "./components/OptionsPanel";
 import { computeChart } from "./engine/swiss";
-import { findCity, prettyDate, wallClock } from "./engine/almanac";
+import { CITIES, findCity, prettyDate, wallClock } from "./engine/almanac";
+import { deleteChart, listCharts, saveChart } from "./lib/chartVault";
 import { scrub } from "./lib/scrubTime";
 import { useTween } from "./hooks/useTween";
-import type { City } from "./types/";
+import type { City, HouseSystem, Numerals, SavedChart } from "./types/";
 
-// Time and date - anchor for the calculations
-const CAST_MS = Date.UTC(1992, 2, 14, 12, 45);
-const HOME_CITY = findCity("New York, USA") as City;
+// Startup anchor: the moment the app was opened, placed in the machine's own
+// timezone — the OS already knows its IANA zone, and City.tz holds the same
+// names, so a plain find matches this computer to a listed city. No listed
+// city in this zone → the old New York default keeps startup deterministic.
+const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const HOME_CITY =
+  CITIES.find((c) => c.tz === localTz) ?? (findCity("New York, USA") as City);
+const CAST_MS = Date.now();
+
+// one home for the house system — becomes state the day a selector exists
+const HOUSE_SYSTEM: HouseSystem = "Placidus";
 
 // Scroll steps land on whole-minute boundaries (drag deliberately doesn't — see
 // the onScrub comment: per-frame snapping stalls slow drags)
@@ -23,6 +33,15 @@ function App() {
   const [city, setCity] = useState<City>(HOME_CITY);
   // Aspect types the user has toggled off in the panel, e.g. { Square: true }
   const [aspectsOff, setAspectsOff] = useState<Record<string, boolean>>({});
+  // Options-panel display toggles: zodiac band on/off, house numbering style
+  const [showSigns, setShowSigns] = useState(true);
+  const [numerals, setNumerals] = useState<Numerals>("roman");
+  // The vault's list — starts empty, filled from storage once on mount (a real
+  // file read on desktop, so it's async and arrives just after first paint)
+  const [saved, setSaved] = useState<SavedChart[]>([]);
+  useEffect(() => {
+    listCharts().then(setSaved);
+  }, []);
   // The clicked planet (wheel glyph or panel row), or null
   const [selected, setSelected] = useState<string | null>(null);
   // The clicked aspect line as a "p1|p2" key, or null. Planet and aspect
@@ -33,7 +52,17 @@ function App() {
   // (drag, scroll, steppers) cancels it so the user's hand always wins
   const returnTween = useTween(setUtcMs);
 
-  const chart = computeChart(utcMs, city.lat, city.lon, "Placidus");
+  const chart = computeChart(utcMs, city.lat, city.lon, HOUSE_SYSTEM);
+
+  // Loading reaches exactly the state casting reaches (city + both times),
+  // plus the tween cancel every manual input performs. Moving castMs re-keys
+  // CastForm, which is how the form fields snap to the loaded chart.
+  const loadChart = (c: SavedChart) => {
+    returnTween.cancel();
+    setCity(c.city);
+    setUtcMs(c.castMs);
+    setCastMs(c.castMs);
+  };
 
   // Everything that should stay bright while a selection is active: a selected
   // planet keeps itself + every aspect partner; a selected line keeps exactly
@@ -75,8 +104,11 @@ function App() {
       <SidePanel
         chart={chart}
         utcMs={utcMs}
+        castMs={castMs}
         city={city}
         aspectsOff={aspectsOff}
+        numerals={numerals}
+        savedCharts={saved}
         selected={selected}
         onCast={(ms, castCity) => {
           returnTween.cancel();
@@ -94,6 +126,18 @@ function App() {
           returnTween.cancel();
           setUtcMs(ms);
         }}
+        // saves capture utcMs — the moment on the wheel RIGHT NOW, wound or
+        // dragged included — not just the last formal cast
+        onSaveChart={(name) =>
+          saveChart({
+            name,
+            castMs: utcMs,
+            city,
+            houseSystem: HOUSE_SYSTEM,
+          }).then(setSaved)
+        }
+        onLoadChart={loadChart}
+        onDeleteChart={(id) => deleteChart(id).then(setSaved)}
       />
       <main className="flex-1 min-w-0 flex flex-col items-center justify-center">
         {/* The drag pipeline: Chart reports "user swept delta degrees" → scrub solves
@@ -109,6 +153,8 @@ function App() {
             onReturn (double-click) coasts home to the cast moment over ~0.8s. */}
         <Chart
           chart={chartView}
+          showSigns={showSigns}
+          numerals={numerals}
           selected={selected}
           selectedAspect={selectedAspect}
           related={related}
@@ -120,7 +166,7 @@ function App() {
                 { utcMs, asc: chart.asc },
                 city.lat,
                 city.lon,
-                "Placidus",
+                HOUSE_SYSTEM,
               ),
             );
           }}
@@ -138,9 +184,17 @@ function App() {
         <footer className="italic text-[20px] text-umber text-center">
           {city.name}, {city.label.split(", ")[1]} ·{" "}
           {prettyDate(wallClock(city.tz, utcMs).date)} at{" "}
-          {wallClock(city.tz, utcMs).time} · Placidus houses
+          {wallClock(city.tz, utcMs).time} · {HOUSE_SYSTEM} houses
         </footer>
       </main>
+      <OptionsPanel
+        showSigns={showSigns}
+        numerals={numerals}
+        onToggleSigns={() => setShowSigns((s) => !s)}
+        onToggleNumerals={() =>
+          setNumerals((n) => (n === "roman" ? "arabic" : "roman"))
+        }
+      />
     </div>
   );
 }

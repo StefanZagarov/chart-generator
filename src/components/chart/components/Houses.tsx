@@ -1,7 +1,6 @@
-import type { Polar } from "../../../types/";
+import type { Numerals, Polar } from "../../../types/";
 
-// exported: the side panel's planet list shows houses as numerals too
-export const ROMAN_NUMERALS = [
+const ROMAN_NUMERALS = [
   "I",
   "II",
   "III",
@@ -16,14 +15,22 @@ export const ROMAN_NUMERALS = [
   "XII",
 ];
 
+// The one home of house-number formatting — the wheel and the side panel's
+// planet list both call this, so the roman/arabic toggle can't half-apply.
+// Takes the 0-based house INDEX (callers with 1-based `planet.house` pass -1).
+export const houseLabel = (index: number, numerals: Numerals) =>
+  numerals === "roman" ? ROMAN_NUMERALS[index] : String(index + 1);
+
 export function Houses({
   polarPoint,
   cusps,
   ascendant,
+  numerals,
 }: {
   polarPoint: Polar;
   cusps: number[];
   ascendant: number;
+  numerals: Numerals;
 }) {
   // ASC
   const [ascInnerX, ascInnerY] = polarPoint(ascendant, 240);
@@ -93,7 +100,7 @@ export function Houses({
               fontStyle="italic"
               fill="#8a7658"
             >
-              {ROMAN_NUMERALS[houseIndex]}
+              {houseLabel(houseIndex, numerals)}
             </text>
           </g>
         );

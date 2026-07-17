@@ -103,3 +103,20 @@ export interface WallClock {
 
 /** The polar→screen helper: (ecliptic longitude, radius) → [x, y]. Defined in Chart, passed to every wheel component. */
 export type Polar = (longitude: number, radius: number) => [number, number];
+
+/** house numbering style, switchable in the options panel */
+export type Numerals = "roman" | "arabic";
+
+/** One saved cast. Carries a full City snapshot (not a lookup key) so the save
+ * still loads correctly even if the city list changes; houseSystem is always
+ * "Placidus" today but stored so old saves stay valid once a selector exists. */
+export interface SavedChart {
+  id: string;
+  /** what the user named it */
+  name: string;
+  /** the saved instant */
+  castMs: number;
+  city: City;
+  houseSystem: HouseSystem;
+  savedAt: number;
+}

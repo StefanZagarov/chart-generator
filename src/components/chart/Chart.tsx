@@ -1,4 +1,4 @@
-import type { Chart, Polar } from "../../types/";
+import type { Chart, Numerals, Polar } from "../../types/";
 import { Zodiac } from "./components/Zodiac";
 import { Ticks } from "./components/Ticks";
 import { Houses } from "./components/Houses";
@@ -9,6 +9,8 @@ import { useRef } from "react";
 // Drawing pictures in the form of circles and lines
 export function Chart({
   chart,
+  showSigns,
+  numerals,
   selected,
   selectedAspect,
   related,
@@ -19,6 +21,10 @@ export function Chart({
   onReturn,
 }: {
   chart: Chart;
+  /** options-panel toggle: draw the zodiac band's glyphs and separators? */
+  showSigns: boolean;
+  /** options-panel toggle: house numbering style */
+  numerals: Numerals;
   /** name of the selected planet, or null */
   selected: string | null;
   /** "p1|p2" key of the selected aspect line, or null */
@@ -186,12 +192,15 @@ export function Chart({
       {/* <circle r={5.5} fill="none" stroke="#4a3826" strokeWidth={0.8} /> */}
       {/* <circle r={1.8} fill="#4a3826" /> */}
 
-      <Zodiac polarPoint={polarPoint} />
+      {/* toggled off, the whole band (glyphs + separators) goes — the ring
+          circles above stay, so the wheel keeps its silhouette */}
+      {showSigns && <Zodiac polarPoint={polarPoint} />}
       <Ticks polarPoint={polarPoint} />
       <Houses
         polarPoint={polarPoint}
         cusps={chart.cusps}
         ascendant={ascendant}
+        numerals={numerals}
       />
       <Aspects
         polarPoint={polarPoint}

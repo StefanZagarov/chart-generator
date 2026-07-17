@@ -106,14 +106,15 @@ export function localToUTC(
   return { utcMs: utc, offsetMin: tzOffsetMin(tz, utc) };
 }
 
-/** "UTC+02:00" — the zone's offset at that instant (so DST is reflected) */
+/** "UTC+02:00" — the zone's offset at that instant (so DST is reflected).
+ * Round BEFORE splitting into h:mm — tzOffsetMin is fractional whenever utcMs
+ * isn't a whole second (drags, Date.now()), and flooring 179.99 min gave the
+ * infamous "UTC+02:60". One rounded integer can't disagree with itself. */
 export function offsetLabel(tz: string, utcMs: number): string {
-  const m = tzOffsetMin(tz, utcMs),
+  const m = Math.round(tzOffsetMin(tz, utcMs)),
     s = m < 0 ? "−" : "+",
     am = Math.abs(m);
-  return (
-    "UTC" + s + pad2(Math.floor(am / 60)) + ":" + pad2(Math.round(am % 60))
-  );
+  return "UTC" + s + pad2(Math.floor(am / 60)) + ":" + pad2(am % 60);
 }
 
 const MONTHS = [

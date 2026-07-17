@@ -1,5 +1,5 @@
-import { ROMAN_NUMERALS } from "../../chart/components/Houses";
-import type { Planet } from "../../../types/";
+import { houseLabel } from "../../chart/components/Houses";
+import type { Numerals, Planet } from "../../../types/";
 
 // One row per body: glyph | name (+ ℞ when retrograde) | position | house numeral.
 // Everything shown comes pre-formatted from the engine (posLabel, retro, house),
@@ -13,12 +13,14 @@ export function PlanetList({
   planets,
   ascLabel,
   mcLabel,
+  numerals,
   selected,
   onSelect,
 }: {
   planets: Planet[];
   ascLabel: string;
   mcLabel: string;
+  numerals: Numerals;
   selected: string | null;
   onSelect: (name: string | null) => void;
 }) {
@@ -28,8 +30,8 @@ export function PlanetList({
           ascLabel/mcLabel come pre-formatted from the engine like posLabel does.
           Their houses are definitional (ASC begins house I, MC begins house X). */}
       {[
-        { key: "Ascendant", short: "Asc", label: ascLabel, house: "I" },
-        { key: "Midheaven", short: "MC", label: mcLabel, house: "X" },
+        { key: "Ascendant", short: "Asc", label: ascLabel, house: houseLabel(0, numerals) },
+        { key: "Midheaven", short: "MC", label: mcLabel, house: houseLabel(9, numerals) },
       ].map((angle) => (
         <div
           key={angle.key}
@@ -65,7 +67,7 @@ export function PlanetList({
           </span>
           <span className="text-[14.5px]">{planet.posLabel}</span>
           <span className="text-[12.5px] italic text-bronze text-right">
-            {ROMAN_NUMERALS[planet.house - 1]}
+            {houseLabel(planet.house - 1, numerals)}
           </span>
         </div>
       ))}
