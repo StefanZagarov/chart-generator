@@ -6,7 +6,7 @@ import { VaultActions } from "./components/VaultActions";
 import { ChartLibrary } from "./components/ChartLibrary";
 import { ImportDialog } from "./components/ImportDialog";
 import { computeChart } from "./engine/swiss";
-import { CITIES, clampTime, prettyDate, wallClock } from "./engine/almanac";
+import { CITIES, clampTime, formatDate, wallClock } from "./engine/almanac";
 import { deleteChart, importCharts, listCharts, saveChart } from "./lib/chartVault";
 import { parseAAF } from "./lib/aaf";
 import { wheelImage } from "./lib/wheelImage";
@@ -209,7 +209,7 @@ function App() {
         />
         {/* Live caption: wallClock re-derives the city's local date & time from
             utcMs every render, so this line follows the wheel as it's dragged.
-            prettyDate + time instead of .pretty: same text minus the seconds. */}
+            formatDate + time (no seconds); formatDate labels BCE years. */}
         <footer className="text-center">
           {loadedName && (
             <div className="font-fell text-[24px] tracking-[0.02em]">
@@ -218,8 +218,11 @@ function App() {
           )}
           <div className="italic text-[20px] text-umber">
             {city.name}, {city.label.split(", ")[1]} ·{" "}
-            {prettyDate(wallClock(city.tz, utcMs).date)} at{" "}
-            {wallClock(city.tz, utcMs).time} · {HOUSE_SYSTEM} houses
+            {(() => {
+              const wc = wallClock(city.tz, utcMs);
+              return `${formatDate(wc.y, wc.mo, wc.d)} at ${wc.time}`;
+            })()}{" "}
+            · {HOUSE_SYSTEM} houses
           </div>
         </footer>
       </main>

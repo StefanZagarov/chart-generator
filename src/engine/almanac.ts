@@ -88,18 +88,20 @@ function wallParts(tz: string, utcMs: number) {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
+    era: "short", // needed to un-collapse BCE years — see below
   }).formatToParts(new Date(utcMs));
   const g = (t: string) => +p.find((x) => x.type === t)!.value;
   let h = g("hour");
   if (h === 24) h = 0; // some engines report midnight as 24
-  return {
-    y: g("year"),
-    mo: g("month"),
-    d: g("day"),
-    h,
-    mi: g("minute"),
-    s: g("second"),
-  };
+  // Intl reports BCE years as positive HISTORICAL numbers with a "BC" era and
+  // no sign (astronomical 0 → "1 BC", -50 → "51 BC"). Convert back to the
+  // signed astronomical year the rest of the app uses: N BC → (1 - N), so
+  // "1 BC" → 0 and "51 BC" → -50. Without this the tz math and display would
+  // read every pre-1-CE date as a wrong positive year.
+  const era = p.find((x) => x.type === "era")?.value;
+  const histYear = g("year");
+  const y = era === "BC" ? 1 - histYear : histYear;
+  return { y, mo: g("month"), d: g("day"), h, mi: g("minute"), s: g("second") };
 }
 
 function tzOffsetMin(tz: string, utcMs: number): number {
@@ -137,12 +139,13 @@ export const daysInMonth = (y: number, month1: number): number =>
  * Logic: the offset itself depends on the answer (DST!), so guess with the offset
  * at the target reading, then correct once with the offset at the guessed instant. */
 export function localToUTC(
-  dateStr: string,
-  timeStr: string,
+  y: number,
+  mo: number,
+  d: number,
+  h: number,
+  mi: number,
   tz: string,
 ): { utcMs: number; offsetMin: number } {
-  const [y, mo, d] = dateStr.split("-").map(Number);
-  const [h, mi] = timeStr.split(":").map(Number);
   const target = utcFromParts(y, mo - 1, d, h, mi || 0);
   let utc = target - tzOffsetMin(tz, target) * 60000;
   utc = target - tzOffsetMin(tz, utc) * 60000;
@@ -175,18 +178,26 @@ const MONTHS = [
   "December",
 ];
 
-/** local date/time in tz at instant utcMs, in the three formats the app uses */
+/** A signed astronomical year as text: 1992 → "1992", 0 → "0", -50 → "50 BCE".
+ * (Matches the year field's convention: negative = BCE, 0 and up = CE.) */
+export const formatYear = (y: number): string => (y < 0 ? -y + " BCE" : "" + y);
+
+/** "14 March 1992" / "15 June 50 BCE" from numeric parts */
+export const formatDate = (y: number, mo: number, d: number): string =>
+  d + " " + MONTHS[mo - 1] + " " + formatYear(y);
+
+/** local date/time in tz at instant utcMs, in the formats the app uses */
 export function wallClock(tz: string, utcMs: number): WallClock {
   const w = wallParts(tz, utcMs);
   return {
-    date: w.y + "-" + pad2(w.mo) + "-" + pad2(w.d),
+    y: w.y,
+    mo: w.mo,
+    d: w.d,
+    h: w.h,
+    mi: w.mi,
     time: pad2(w.h) + ":" + pad2(w.mi),
     pretty:
-      w.d +
-      " " +
-      MONTHS[w.mo - 1] +
-      " " +
-      w.y +
+      formatDate(w.y, w.mo, w.d) +
       ", " +
       pad2(w.h) +
       ":" +
@@ -194,12 +205,6 @@ export function wallClock(tz: string, utcMs: number): WallClock {
       ":" +
       pad2(w.s),
   };
-}
-
-/** "1992-03-14" → "14 March 1992" */
-export function prettyDate(dateStr: string): string {
-  const [y, mo, d] = dateStr.split("-").map(Number);
-  return d + " " + MONTHS[mo - 1] + " " + y;
 }
 
 // ---- Cities ----

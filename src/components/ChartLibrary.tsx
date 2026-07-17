@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal } from "./Modal";
 import { MiniWheel } from "./chart/MiniWheel";
-import { prettyDate, wallClock } from "../engine/almanac";
+import { formatDate, wallClock } from "../engine/almanac";
 import type { Numerals, SavedChart } from "../types/";
 
 /** The Load window: one box per saved chart, each holding that chart's actual
@@ -89,8 +89,11 @@ export function ChartLibrary({
             <div className="mt-2 text-center">
               <div className="text-[14.5px] truncate">{c.name}</div>
               <div className="text-[11.5px] italic text-bronze truncate">
-                {prettyDate(wallClock(c.city.tz, c.castMs).date)} at{" "}
-                {wallClock(c.city.tz, c.castMs).time} · {c.city.name}
+                {(() => {
+                  const wc = wallClock(c.city.tz, c.castMs);
+                  return `${formatDate(wc.y, wc.mo, wc.d)} at ${wc.time}`;
+                })()}{" "}
+                · {c.city.name}
               </div>
             </div>
             <button

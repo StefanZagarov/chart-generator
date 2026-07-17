@@ -35,6 +35,7 @@ function Segment({
   nextRef,
   clamp,
   wide,
+  signed,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -45,6 +46,8 @@ function Segment({
   /** applied only when the segment is full, so a lone "0" (on its way to "07") survives */
   clamp?: (full: string) => string;
   wide?: boolean;
+  /** year segment: allow a leading "-" for BCE (negative astronomical years) */
+  signed?: boolean;
 }) {
   return (
     <input
@@ -55,15 +58,19 @@ function Segment({
       ref={inputRef}
       onFocus={(e) => e.target.select()}
       onChange={(e) => {
-        let digits = e.target.value.replace(/\D/g, "").slice(0, length);
-        // clamp out-of-range values the moment the segment completes: "45" → "31",
-        // "00" → "01" — never mid-typing, or the first "0" of "07" would be mangled
-        if (digits.length === length && clamp) digits = clamp(digits);
-        onChange(digits);
+        const raw = e.target.value;
+        const neg = signed && raw.trimStart().startsWith("-");
+        const digits = raw.replace(/\D/g, "").slice(0, length);
+        let v = (neg ? "-" : "") + digits;
+        // clamp out-of-range values the moment the segment fills (by digit count,
+        // so the sign doesn't shift the threshold): "45" → "31", "00" → "01" —
+        // never mid-typing, or the first "0" of "07" would be mangled
+        if (digits.length === length && clamp) v = clamp(v);
+        onChange(v);
         // segment full → move on; focus() fires onFocus, which selects the target
         if (digits.length === length) nextRef?.current?.focus();
       }}
-      className={`${wide ? "w-[5ch]" : "w-[3ch]"} text-center bg-transparent border-0 px-0 py-1 text-[15.5px] outline-none`}
+      className={`${wide ? "w-[6ch]" : "w-[3ch]"} text-center bg-transparent border-0 px-0 py-1 text-[15.5px] outline-none`}
     />
   );
 }
@@ -91,12 +98,12 @@ export function CastForm({
   // this component on (castMs, city), so any moved anchor is a "new" form whose
   // initializers re-run. That keeps the contract above: the form always
   // displays what was cast, yet is never reset mid-edit by a render.
-  const wc = wallClock(city.tz, initialMs); // "YYYY-MM-DD" / "HH:MM"
-  const [initYear, initMonth, initDay] = wc.date.split("-");
+  const wc = wallClock(city.tz, initialMs);
   const [initHour, initMinute] = wc.time.split(":");
-  const [day, setDay] = useState(initDay);
-  const [month, setMonth] = useState(initMonth);
-  const [year, setYear] = useState(initYear);
+  const [day, setDay] = useState(String(wc.d).padStart(2, "0"));
+  const [month, setMonth] = useState(String(wc.mo).padStart(2, "0"));
+  // year holds the signed astronomical year as text ("1992", "-50", "0")
+  const [year, setYear] = useState(String(wc.y));
   const [hour, setHour] = useState(initHour);
   const [minute, setMinute] = useState(initMinute);
   const [place, setPlace] = useState(city.label);
@@ -171,18 +178,18 @@ export function CastForm({
     }
     return clamped;
   };
-  // Year clamps to whole years the ephemeris fully covers (its range ends
-  // mid-3003, so 3002 is the last complete year; earlier years back to the
-  // engine's 3002-BCE floor are only reachable by winding, not this CE field),
-  // then re-checks the one date case only it can decide: 29/02 in a non-leap year
+  // Year is signed (astronomical: negative = BCE, 0 and up = CE) and clamps to
+  // the whole years the ephemeris fully covers, -3000 to 3002 (its range runs
+  // 3002 BCE Feb – 3003 CE Apr, so those partial edge years are winding-only).
+  // No zero-padding — it would turn "-50" into "0-50". Then re-check the one
+  // date case only the year can decide: 29/02 in a non-leap year.
   const clampYear = (v: string) => {
-    const n = Math.min(3002, Math.max(1, Number(v)));
-    const clamped = String(n).padStart(4, "0");
+    const n = Math.min(3002, Math.max(-3000, Number(v)));
     if (day && month === "02") {
       const max = daysInMonth(n, 2);
       if (Number(day) > max) setDay(String(max));
     }
-    return clamped;
+    return String(n);
   };
   const clampHour = (v: string) => clampNum(v, 0, 23);
   const clampMinute = (v: string) => clampNum(v, 0, 59);
@@ -207,8 +214,9 @@ export function CastForm({
     const [d, mo, y] = [Number(day), Number(month), Number(year)];
     const roundTrip = new Date(utcFromParts(y, mo - 1, d));
     if (
-      !year ||
-      y < 1 ||
+      year === "" ||
+      year === "-" ||
+      y < -3000 ||
       y > 3002 ||
       !day ||
       !month ||
@@ -226,18 +234,14 @@ export function CastForm({
       return;
     }
 
-    // normalize the display (1/3 → 01/03) and build the engine's formats
-    const dd = day.padStart(2, "0");
-    const mm = month.padStart(2, "0");
-    const hh = hour.padStart(2, "0");
-    const mi = minute.padStart(2, "0");
-    setDay(dd);
-    setMonth(mm);
-    setHour(hh);
-    setMinute(mi);
+    // normalize the display (1/3 → 01/03; year stays as-is, it may be signed)
+    setDay(day.padStart(2, "0"));
+    setMonth(month.padStart(2, "0"));
+    setHour(hour.padStart(2, "0"));
+    setMinute(minute.padStart(2, "0"));
     setError("");
 
-    const { utcMs } = localToUTC(`${year}-${mm}-${dd}`, `${hh}:${mi}`, found.tz);
+    const { utcMs } = localToUTC(y, mo, d, h, min, found.tz);
     onCast(utcMs, found);
   };
 
@@ -246,12 +250,11 @@ export function CastForm({
   // form always displays what was cast), and cast immediately.
   const castNowAt = (nowCity: City) => {
     const nowMs = Date.now();
-    const wc = wallClock(nowCity.tz, nowMs); // wc.date "YYYY-MM-DD", wc.time "HH:MM"
-    const [y, mo, d] = wc.date.split("-");
+    const wc = wallClock(nowCity.tz, nowMs);
     const [h, min] = wc.time.split(":");
-    setDay(d);
-    setMonth(mo);
-    setYear(y);
+    setDay(String(wc.d).padStart(2, "0"));
+    setMonth(String(wc.mo).padStart(2, "0"));
+    setYear(String(wc.y));
     setHour(h);
     setMinute(min);
     setPlace(nowCity.label);
@@ -298,7 +301,7 @@ export function CastForm({
             <span className="text-bronze">/</span>
             <Segment value={month} onChange={setMonth} length={2} placeholder="MM" inputRef={monthRef} nextRef={yearRef} clamp={clampMonth} />
             <span className="text-bronze">/</span>
-            <Segment value={year} onChange={setYear} length={4} placeholder="YYYY" inputRef={yearRef} nextRef={hourRef} clamp={clampYear} wide />
+            <Segment value={year} onChange={setYear} length={4} placeholder="YYYY" inputRef={yearRef} nextRef={hourRef} clamp={clampYear} wide signed />
           </div>
         </label>
         <label className="block min-w-0">

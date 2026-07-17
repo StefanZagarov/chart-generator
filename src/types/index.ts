@@ -96,8 +96,16 @@ export interface City {
 }
 
 export interface WallClock {
-  /** "YYYY-MM-DD" */
-  date: string;
+  /** astronomical year (signed: 0 and up = CE, negative = BCE) */
+  y: number;
+  /** month 1-12 */
+  mo: number;
+  /** day 1-31 */
+  d: number;
+  /** hour 0-23 */
+  h: number;
+  /** minute 0-59 */
+  mi: number;
   /** "HH:MM" 24h */
   time: string;
   /** "14 March 1992, 07:45:00" */
