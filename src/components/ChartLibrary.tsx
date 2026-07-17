@@ -41,7 +41,15 @@ export function ChartLibrary({
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <Modal title="Saved Charts" onClose={onClose}>
+    <Modal
+      // "Saved Charts · 131", or "· 7 of 131" while a search narrows the grid
+      title={`Saved Charts · ${
+        shown.length === charts.length
+          ? charts.length
+          : `${shown.length} of ${charts.length}`
+      }`}
+      onClose={onClose}
+    >
       {charts.length === 0 ? (
         <div className="italic text-bronze text-center py-8">
           Nothing saved yet — cast a chart and press Save, or Import an AAF
