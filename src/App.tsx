@@ -201,51 +201,53 @@ function App() {
       />
       {/* select-none: belt to the preventDefault suspenders in Chart — the
           wheel's numerals/labels and the footer must never highlight mid-drag */}
-      <main className="flex-1 min-w-0 flex flex-col items-center justify-center select-none">
-        {/* The drag pipeline: Chart reports "user swept delta degrees" → scrub solves
-            "at what time has the ascendant moved that far?" → setUtcMs stores it →
-            re-render → computeChart → every polarPoint lands differently → the wheel
-            has "rotated". Nothing ever rotates; only time changes. */}
-        {/* Drag (onScrub) stays CONTINUOUS — no snapping. Snapping per frame
-            discards sub-minute progress (slow drags stall, mid drags stutter as
-            frames hover around the rounding threshold). The footer shows no
-            seconds, so minute granularity is a display fact already.
-            Scroll (onWind) is stepwise by nature, so it does snap — and thereby
-            re-aligns time to clean minute boundaries after any drag.
-            onReturn (double-click) coasts home to the cast moment over ~0.8s. */}
-        <Chart
-          chart={chartView}
-          showSigns={showSigns}
-          numerals={numerals}
-          planetColors={planetColors}
-          zodiacColors={zodiacColors}
-          selected={selected}
-          selectedAspect={selectedAspect}
-          related={related}
-          onScrub={(delta) => {
-            returnTween.cancel();
-            setUtcMs(
-              scrub(
-                delta,
-                { utcMs, asc: chart.asc },
-                city.lat,
-                city.lon,
-                HOUSE_SYSTEM,
-              ),
-            );
-          }}
-          onWind={(deltaMs) => {
-            returnTween.cancel();
-            setUtcMs(snapToMinute(utcMs + deltaMs));
-          }}
-          onSelect={selectPlanet}
-          onSelectAspect={selectAspect}
-          onReturn={() => returnTween.start(utcMs, castMs, 800)}
-        />
+      <main className="flex-1 min-w-0 flex flex-col select-none p-4">
+        {/* The wheel fills whatever space the window leaves (its container is
+            flex-1, the footer is pinned below). The SVG is h-full w-full and its
+            viewBox is square with the default preserveAspectRatio, so the drawing
+            scales to the SMALLER of the box's width/height and stays centered —
+            the chart grows and shrinks with the window, never clipping. */}
+        <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center">
+          {/* The drag pipeline: Chart reports "user swept delta degrees" → scrub
+              solves "at what time has the ascendant moved that far?" → setUtcMs →
+              re-render → computeChart → every polarPoint lands differently → the
+              wheel has "rotated". Nothing ever rotates; only time changes.
+              Drag (onScrub) stays CONTINUOUS; scroll (onWind) snaps to minutes;
+              onReturn (double-click) coasts home to the cast moment over ~0.8s. */}
+          <Chart
+            chart={chartView}
+            showSigns={showSigns}
+            numerals={numerals}
+            planetColors={planetColors}
+            zodiacColors={zodiacColors}
+            selected={selected}
+            selectedAspect={selectedAspect}
+            related={related}
+            onScrub={(delta) => {
+              returnTween.cancel();
+              setUtcMs(
+                scrub(
+                  delta,
+                  { utcMs, asc: chart.asc },
+                  city.lat,
+                  city.lon,
+                  HOUSE_SYSTEM,
+                ),
+              );
+            }}
+            onWind={(deltaMs) => {
+              returnTween.cancel();
+              setUtcMs(snapToMinute(utcMs + deltaMs));
+            }}
+            onSelect={selectPlanet}
+            onSelectAspect={selectAspect}
+            onReturn={() => returnTween.start(utcMs, castMs, 800)}
+          />
+        </div>
         {/* Live caption: wallClock re-derives the city's local date & time from
             utcMs every render, so this line follows the wheel as it's dragged.
             formatDate + time (no seconds); formatDate labels BCE years. */}
-        <footer className="text-center">
+        <footer className="flex-none text-center pt-2">
           {loadedName && (
             <div className="font-fell text-[24px] tracking-[0.02em]">
               {loadedName}

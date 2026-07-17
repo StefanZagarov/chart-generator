@@ -197,7 +197,7 @@ export function Chart({
       onWheel={onWheel}
       onDoubleClick={onReturn}
       viewBox="-515 -515 1030 1030"
-      className="block h-[88svh] aspect-square mx-auto cursor-grab touch-none"
+      className="block h-full w-full cursor-grab touch-none"
     >
       {/* ASC and MC lines */}
       <defs>
