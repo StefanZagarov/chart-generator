@@ -9,6 +9,7 @@ import { computeChart } from "./engine/swiss";
 import { CITIES, findCity, prettyDate, wallClock } from "./engine/almanac";
 import { deleteChart, importCharts, listCharts, saveChart } from "./lib/chartVault";
 import { parseAAF } from "./lib/aaf";
+import { wheelImage } from "./lib/wheelImage";
 import { scrub } from "./lib/scrubTime";
 import { useTween } from "./hooks/useTween";
 import type { City, HouseSystem, Numerals, SavedChart } from "./types/";
@@ -48,6 +49,9 @@ function App() {
   }, []);
   // which vault window is open: the gallery (Load), the AAF paste (Import), or none
   const [dialog, setDialog] = useState<"library" | "import" | null>(null);
+  // whose chart the wheel is showing — the name of the loaded (or just-saved)
+  // save. Casting fresh from the form clears it: that chart belongs to no save.
+  const [loadedName, setLoadedName] = useState<string | null>(null);
   // The clicked planet (wheel glyph or panel row), or null
   const [selected, setSelected] = useState<string | null>(null);
   // The clicked aspect line as a "p1|p2" key, or null. Planet and aspect
@@ -68,6 +72,7 @@ function App() {
     setCity(c.city);
     setUtcMs(c.castMs);
     setCastMs(c.castMs);
+    setLoadedName(c.name);
     setDialog(null); // picking a chart is what the library window is FOR
   };
 
@@ -75,7 +80,13 @@ function App() {
   // the dialog its report — it decides whether to close (clean) or show errors
   const importText = async (text: string) => {
     const { charts, errors } = parseAAF(text, HOUSE_SYSTEM);
-    if (charts.length > 0) setSaved(await importCharts(charts));
+    if (charts.length > 0)
+      setSaved(
+        await importCharts(
+          // bake each import's preview now — ~0.5 ms per chart, once
+          charts.map((c) => ({ ...c, image: wheelImage(c, numerals) })),
+        ),
+      );
     return { added: charts.length, errors };
   };
 
@@ -131,6 +142,7 @@ function App() {
           setCity(castCity);
           setUtcMs(ms);
           setCastMs(ms); // casting moves the anchor double-click returns to
+          setLoadedName(null); // a fresh cast belongs to no saved chart
         }}
         onToggleAspect={(type) =>
           setAspectsOff((off) => ({ ...off, [type]: !off[type] }))
@@ -187,21 +199,29 @@ function App() {
         {/* Live caption: wallClock re-derives the city's local date & time from
             utcMs every render, so this line follows the wheel as it's dragged.
             prettyDate + time instead of .pretty: same text minus the seconds. */}
-        <footer className="italic text-[20px] text-umber text-center">
-          {city.name}, {city.label.split(", ")[1]} ·{" "}
-          {prettyDate(wallClock(city.tz, utcMs).date)} at{" "}
-          {wallClock(city.tz, utcMs).time} · {HOUSE_SYSTEM} houses
+        <footer className="text-center">
+          {loadedName && (
+            <div className="font-fell text-[24px] tracking-[0.02em]">
+              {loadedName}
+            </div>
+          )}
+          <div className="italic text-[20px] text-umber">
+            {city.name}, {city.label.split(", ")[1]} ·{" "}
+            {prettyDate(wallClock(city.tz, utcMs).date)} at{" "}
+            {wallClock(city.tz, utcMs).time} · {HOUSE_SYSTEM} houses
+          </div>
         </footer>
       </main>
       <VaultActions
-        onSave={(name) =>
+        onSave={(name) => {
+          const cast = { castMs: utcMs, city, houseSystem: HOUSE_SYSTEM };
           saveChart({
             name,
-            castMs: utcMs,
-            city,
-            houseSystem: HOUSE_SYSTEM,
-          }).then(setSaved)
-        }
+            ...cast,
+            image: wheelImage(cast, numerals), // bake the preview at save time
+          }).then(setSaved);
+          setLoadedName(name); // what's on the wheel now answers to this name
+        }}
         onOpenLibrary={() => setDialog("library")}
         onOpenImport={() => setDialog("import")}
       />
