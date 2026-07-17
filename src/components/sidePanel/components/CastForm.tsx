@@ -170,13 +170,16 @@ export function CastForm({
     }
     return clamped;
   };
-  // Year does the same for the one case only it can decide: 29/02 in a non-leap year
+  // Year clamps into the ephemeris's supported span [1, 2999] (no data beyond),
+  // then re-checks the one date case only it can decide: 29/02 in a non-leap year
   const clampYear = (v: string) => {
+    const n = Math.min(2999, Math.max(1, Number(v)));
+    const clamped = String(n).padStart(4, "0");
     if (day && month === "02") {
-      const max = new Date(Date.UTC(Number(v), 2, 0)).getUTCDate();
+      const max = new Date(Date.UTC(n, 2, 0)).getUTCDate();
       if (Number(day) > max) setDay(String(max));
     }
-    return v;
+    return clamped;
   };
   const clampHour = (v: string) => clampNum(v, 0, 23);
   const clampMinute = (v: string) => clampNum(v, 0, 59);

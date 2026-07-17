@@ -6,7 +6,7 @@ import { VaultActions } from "./components/VaultActions";
 import { ChartLibrary } from "./components/ChartLibrary";
 import { ImportDialog } from "./components/ImportDialog";
 import { computeChart } from "./engine/swiss";
-import { CITIES, prettyDate, wallClock } from "./engine/almanac";
+import { CITIES, clampTime, prettyDate, wallClock } from "./engine/almanac";
 import { deleteChart, importCharts, listCharts, saveChart } from "./lib/chartVault";
 import { parseAAF } from "./lib/aaf";
 import { wheelImage } from "./lib/wheelImage";
@@ -34,9 +34,17 @@ const HOUSE_SYSTEM: HouseSystem = "Placidus";
 const snapToMinute = (ms: number) => Math.round(ms / 60_000) * 60_000;
 
 function App() {
-  const [utcMs, setUtcMs] = useState(CAST_MS);
+  const [utcMs, setUtcMsRaw] = useState(CAST_MS);
   // The natal anchor: what the form last cast. Double-click tweens utcMs back here
-  const [castMs, setCastMs] = useState(CAST_MS);
+  const [castMs, setCastMsRaw] = useState(CAST_MS);
+
+  // Every instant is clamped to the ephemeris's supported range on the way in —
+  // one gate for the form, the steppers, drag/scroll, loads, and the tween — so
+  // computeChart below can never be handed a date it has no data for (which
+  // returned NaN positions and blanked the app). scrub/wind just stall at the
+  // boundary, which is the right feel: you can't wind past the edge of time.
+  const setUtcMs = (ms: number) => setUtcMsRaw(clampTime(ms));
+  const setCastMs = (ms: number) => setCastMsRaw(clampTime(ms));
   // Where on Earth the chart is cast from — the form can change it, so it's state
   const [city, setCity] = useState<City>(homeCity);
   // Aspect types the user has toggled off in the panel, e.g. { Square: true }
