@@ -104,8 +104,34 @@ function wallParts(tz: string, utcMs: number) {
 
 function tzOffsetMin(tz: string, utcMs: number): number {
   const w = wallParts(tz, utcMs);
-  return (Date.UTC(w.y, w.mo - 1, w.d, w.h, w.mi, w.s) - utcMs) / 60000;
+  // utcFromParts, not Date.UTC: the wall year can be 1–99 CE (or negative when
+  // winding into BCE), which Date.UTC would remap to the 1900s — a ~1900-year
+  // bogus offset that threw localToUTC wildly off for ancient dates.
+  return (utcFromParts(w.y, w.mo - 1, w.d, w.h, w.mi, w.s) - utcMs) / 60000;
 }
+
+/** Date.UTC-from-parts WITHOUT its legacy 0–99 → 1900s remap, so years 1–99 CE
+ * build the instant they actually name (Date.UTC(1,…) would be 1901). month0 is
+ * 0-indexed like Date.UTC; overflow still rolls over (Feb 31 → March) so the
+ * cast's round-trip validation keeps working. */
+export function utcFromParts(
+  y: number,
+  month0: number,
+  d: number,
+  h = 0,
+  mi = 0,
+  s = 0,
+): number {
+  const dt = new Date(0);
+  dt.setUTCFullYear(y, month0, d);
+  dt.setUTCHours(h, mi, s, 0);
+  return dt.getTime();
+}
+
+/** days in a given month, year-correct for years < 100 too (day 0 of the next
+ * month is the last day of this one) */
+export const daysInMonth = (y: number, month1: number): number =>
+  new Date(utcFromParts(y, month1, 0)).getUTCDate();
 
 /** "when the wall clocks in tz showed this date+time, what instant was it globally?"
  * Logic: the offset itself depends on the answer (DST!), so guess with the offset
@@ -117,7 +143,7 @@ export function localToUTC(
 ): { utcMs: number; offsetMin: number } {
   const [y, mo, d] = dateStr.split("-").map(Number);
   const [h, mi] = timeStr.split(":").map(Number);
-  const target = Date.UTC(y, mo - 1, d, h, mi || 0);
+  const target = utcFromParts(y, mo - 1, d, h, mi || 0);
   let utc = target - tzOffsetMin(tz, target) * 60000;
   utc = target - tzOffsetMin(tz, utc) * 60000;
   return { utcMs: utc, offsetMin: tzOffsetMin(tz, utc) };

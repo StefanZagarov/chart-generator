@@ -1,4 +1,4 @@
-import { nearestCity } from "../engine/almanac";
+import { nearestCity, utcFromParts } from "../engine/almanac";
 import type { HouseSystem, SavedChart } from "../types/";
 
 /** Parser for the AAF chart-exchange format (astro.com "Database AAF export").
@@ -81,7 +81,7 @@ export function parseAAF(
     charts.push({
       name,
       // wall time minus the explicit east-positive offset = the UTC instant
-      castMs: Date.UTC(y, mo - 1, d, hh, mi) - offsetMin * 60_000,
+      castMs: utcFromParts(y, mo - 1, d, hh, mi) - offsetMin * 60_000,
       city: {
         label: place || `${b[1]}, ${b[2]}`,
         name: place.split(",")[0] || b[1],

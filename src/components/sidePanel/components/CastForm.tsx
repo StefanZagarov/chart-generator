@@ -2,9 +2,11 @@ import { useRef, useState } from "react";
 import type { RefObject } from "react";
 import {
   CITIES,
+  daysInMonth,
   findCity,
   localToUTC,
   nearestCity,
+  utcFromParts,
   wallClock,
 } from "../../../engine/almanac";
 import type { City } from "../../../types/";
@@ -154,8 +156,7 @@ export function CastForm({
   const clampDay = (v: string) => {
     const m = Number(month);
     const y = year.length === 4 ? Number(year) : 2000;
-    const max =
-      m >= 1 && m <= 12 ? new Date(Date.UTC(y, m, 0)).getUTCDate() : 31;
+    const max = m >= 1 && m <= 12 ? daysInMonth(y, m) : 31;
     return clampNum(v, 1, max);
   };
   // Month also re-checks the day already sitting in its box: typing runs day →
@@ -165,7 +166,7 @@ export function CastForm({
     const clamped = clampNum(v, 1, 12);
     if (day) {
       const y = year.length === 4 ? Number(year) : 2000;
-      const max = new Date(Date.UTC(y, Number(clamped), 0)).getUTCDate();
+      const max = daysInMonth(y, Number(clamped));
       if (Number(day) > max) setDay(String(max));
     }
     return clamped;
@@ -178,7 +179,7 @@ export function CastForm({
     const n = Math.min(3002, Math.max(1, Number(v)));
     const clamped = String(n).padStart(4, "0");
     if (day && month === "02") {
-      const max = new Date(Date.UTC(n, 2, 0)).getUTCDate();
+      const max = daysInMonth(n, 2);
       if (Number(day) > max) setDay(String(max));
     }
     return clamped;
@@ -198,11 +199,11 @@ export function CastForm({
       return;
     }
 
-    // Assemble and validate the segments. The Date.UTC round-trip catches
-    // impossible dates: 31/02 rolls over to March, so reading the parts back
-    // reveals the mismatch.
+    // Assemble and validate the segments. The round-trip catches impossible
+    // dates: 31/02 rolls over to March, so reading the parts back reveals the
+    // mismatch. utcFromParts (not Date.UTC) so years 1–99 don't remap to 1900s.
     const [d, mo, y] = [Number(day), Number(month), Number(year)];
-    const roundTrip = new Date(Date.UTC(y, mo - 1, d));
+    const roundTrip = new Date(utcFromParts(y, mo - 1, d));
     if (
       year.length !== 4 ||
       !day ||
