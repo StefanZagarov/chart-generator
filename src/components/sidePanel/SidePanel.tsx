@@ -30,6 +30,8 @@ export function SidePanel({
   numerals,
   planetColors,
   selected,
+  drawerOpen,
+  onClose,
   onCast,
   onToggleAspect,
   onSelect,
@@ -44,6 +46,8 @@ export function SidePanel({
   numerals: Numerals;
   planetColors: boolean;
   selected: string | null;
+  drawerOpen: boolean;
+  onClose: () => void;
   onCast: (utcMs: number, city: City) => void;
   onToggleAspect: (type: string) => void;
   onSelect: (name: string | null) => void;
@@ -58,7 +62,21 @@ export function SidePanel({
     ? chart.aspects.filter((a) => a.p1 === selected || a.p2 === selected)
     : [];
   return (
-    <aside className="flex-none w-[332px] h-full overflow-y-auto border-r-[3px] border-double border-gold px-6 pt-6 pb-4 flex flex-col gap-4">
+    <aside
+      id="chart-data-panel"
+      className={`flex-none w-[332px] max-w-[88vw] h-full overflow-y-auto border-r-[3px] border-double border-gold bg-parchment-50 px-6 pt-6 pb-4 flex flex-col gap-4 max-[1000px]:fixed max-[1000px]:inset-y-0 max-[1000px]:left-0 max-[1000px]:z-40 max-[1000px]:transition-transform max-[1000px]:duration-200 max-[1000px]:ease-out motion-reduce:transition-none ${
+        drawerOpen
+          ? "max-[1000px]:translate-x-0"
+          : "max-[1000px]:-translate-x-full"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="hidden max-[1000px]:block self-end text-[10px] tracking-[0.22em] uppercase text-bronze hover:text-ink bg-transparent border-0 cursor-pointer"
+      >
+        Close
+      </button>
       {/* Header */}
       <div className="text-center">
         <div className="text-xs tracking-[0.5em] text-bronze">✦ ✦ ✦</div>

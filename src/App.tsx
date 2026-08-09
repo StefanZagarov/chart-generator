@@ -77,6 +77,28 @@ function App() {
   }, []);
   // which vault window is open: the gallery (Load), the AAF paste (Import), or none
   const [dialog, setDialog] = useState<"library" | "import" | null>(null);
+  // The data panel stays in-flow on desktop and becomes an overlay drawer at
+  // 1000px and below. App owns this because the backdrop and page scroll lock
+  // sit outside the panel itself.
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const responsive = window.matchMedia("(max-width: 1000px)");
+    const closeOnDesktop = () => {
+      if (!responsive.matches) setSidebarOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+
+    document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    responsive.addEventListener("change", closeOnDesktop);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = "";
+      responsive.removeEventListener("change", closeOnDesktop);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [sidebarOpen]);
   // whose chart the wheel is showing — the name of the loaded (or just-saved)
   // save. Casting fresh from the form clears it: that chart belongs to no save.
   const [loadedName, setLoadedName] = useState<string | null>(null);
@@ -169,7 +191,7 @@ function App() {
   };
 
   return (
-    <div className="w-full h-svh flex">
+    <div className="w-full h-svh flex max-[1000px]:h-auto max-[1000px]:min-h-svh max-[1000px]:block">
       <SidePanel
         chart={visible}
         utcMs={utcMs}
@@ -179,6 +201,8 @@ function App() {
         numerals={numerals}
         planetColors={planetColors}
         selected={selected}
+        drawerOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         onCast={(ms, castCity) => {
           returnTween.cancel();
           // Setters batch into one render: there's never an intermediate frame
@@ -199,15 +223,23 @@ function App() {
         // saves capture utcMs — the moment on the wheel RIGHT NOW, wound or
         // dragged included — not just the last formal cast
       />
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close chart data"
+          onClick={() => setSidebarOpen(false)}
+          className="hidden max-[1000px]:block fixed inset-0 z-30 bg-ink/35 backdrop-blur-sm"
+        />
+      )}
       {/* select-none: belt to the preventDefault suspenders in Chart — the
           wheel's numerals/labels and the footer must never highlight mid-drag */}
-      <main className="flex-1 min-w-0 flex flex-col select-none p-4">
+      <main className="flex-1 min-w-0 h-full flex flex-col select-none p-4 max-[1000px]:min-h-svh max-[1000px]:p-3">
         {/* The wheel fills whatever space the window leaves (its container is
             flex-1, the footer is pinned below). The SVG is h-full w-full and its
             viewBox is square with the default preserveAspectRatio, so the drawing
             scales to the SMALLER of the box's width/height and stays centered —
             the chart grows and shrinks with the window, never clipping. */}
-        <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center">
+        <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center max-[1000px]:min-h-[420px]">
           {/* The drag pipeline: Chart reports "user swept delta degrees" → scrub
               solves "at what time has the ascendant moved that far?" → setUtcMs →
               re-render → computeChart → every polarPoint lands differently → the

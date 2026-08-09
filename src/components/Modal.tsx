@@ -28,7 +28,7 @@ export function Modal({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-20 flex items-center justify-center bg-ink/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
     >
       <div
         onClick={(e) => e.stopPropagation()}
