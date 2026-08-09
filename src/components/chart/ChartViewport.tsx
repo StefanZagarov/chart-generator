@@ -179,7 +179,7 @@ export function ChartViewport({
 
       <div
         ref={viewportRef}
-        className="chart-viewport flex-1 min-h-0 min-w-0 overflow-auto max-[1000px]:min-h-[420px]"
+        className="chart-viewport flex-1 min-h-0 min-w-0 overflow-auto max-[1000px]:h-[calc(100svh-9rem)] max-[1000px]:min-h-[420px] max-[1000px]:flex-none"
       >
         <div
           className="grid min-w-full min-h-full place-items-center"
