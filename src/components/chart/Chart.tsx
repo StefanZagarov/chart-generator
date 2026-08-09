@@ -16,7 +16,9 @@ export function Chart({
   selected,
   selectedAspect,
   related,
+  interactionMode,
   onScrub,
+  onPan,
   onWind,
   onSelect,
   onSelectAspect,
@@ -37,7 +39,10 @@ export function Chart({
   selectedAspect: string | null;
   /** the planets to keep bright while a selection is active — everything else dims */
   related: ReadonlySet<string> | null;
+  /** what an ordinary pointer drag does; Shift locks any gesture to pan */
+  interactionMode: "rotate" | "pan";
   onScrub: (deltaDeg: number) => void;
+  onPan: (deltaX: number, deltaY: number) => void;
   onWind: (deltaMs: number) => void;
   onSelect: (name: string | null) => void;
   onSelectAspect: (key: string | null) => void;
@@ -49,7 +54,9 @@ export function Chart({
   // must not cause a render by itself — only the resulting time change does.
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false); // is a drag in progress right now?
+  const gesture = useRef<"rotate" | "pan">("rotate");
   const prevAngle = useRef(0); // pointer angle at the previous move event
+  const prevPointer = useRef({ x: 0, y: 0 });
 
   // Tap vs drag
   // Logic: press and release are the same events for both gestures — what separates
@@ -63,6 +70,7 @@ export function Chart({
   // Drag render optimisation
   // Logic: a mouse fires move events at 125–1000 Hz while the screen paints at ~60. If every event called onScrub directly, React would only commit the last one per frame and the deltas in between would evaporate — the wheel would lag behind a fast drag. Instead every event just adds its sweep to pendingDelta (banked, not overwritten), and requestAnimationFrame — "call me right before the next paint" — flushes the total as a single onScrub. The rafPending flag ensures only one flush is scheduled per frame no matter how many events land in it. Net effect: no delta is ever lost, and the expensive part (the secant solver with its up-to-6 computeChart calls) runs at most once per painted frame instead of once per mouse twitch.
   const pendingDelta = useRef(0); // degrees swept since the last flush
+  const pendingPan = useRef({ x: 0, y: 0 }); // pixels dragged since the last flush
   const rafPending = useRef(false); // is a flush already scheduled this frame?
 
   // Dev-only drag profiler: frame-to-frame gaps and onScrub (solver) cost,
@@ -111,8 +119,12 @@ export function Chart({
     dragging.current = true;
     moved.current = 0;
     downTarget.current = e.target;
+    // Lock the meaning of this gesture now. Releasing Shift or changing the
+    // responsive mode mid-drag cannot turn a pan into a rotation (or vice versa).
+    gesture.current = interactionMode === "pan" || e.shiftKey ? "pan" : "rotate";
     // remember where the drag starts — deltas are measured from here
     prevAngle.current = angleOf(e);
+    prevPointer.current = { x: e.clientX, y: e.clientY };
     // keep receiving this pointer's events even when it leaves the SVG,
     // so the drag doesn't die at the edge
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -123,17 +135,26 @@ export function Chart({
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging.current) return; // hover, not drag
-    const angle = angleOf(e);
-    // how far the pointer swept since the last event...
-    let delta = angle - prevAngle.current;
-    // ...wrapped to [-180, 180) so crossing atan2's +179°→−179° seam
-    // doesn't read as a violent 358° spin
-    delta = ((delta + 540) % 360) - 180;
-    prevAngle.current = angle;
-    moved.current += Math.abs(delta);
+    if (gesture.current === "pan") {
+      const deltaX = e.clientX - prevPointer.current.x;
+      const deltaY = e.clientY - prevPointer.current.y;
+      prevPointer.current = { x: e.clientX, y: e.clientY };
+      moved.current += Math.hypot(deltaX, deltaY);
+      pendingPan.current.x += deltaX;
+      pendingPan.current.y += deltaY;
+    } else {
+      const angle = angleOf(e);
+      // how far the pointer swept since the last event...
+      let delta = angle - prevAngle.current;
+      // ...wrapped to [-180, 180) so crossing atan2's +179°→−179° seam
+      // doesn't read as a violent 358° spin
+      delta = ((delta + 540) % 360) - 180;
+      prevAngle.current = angle;
+      moved.current += Math.abs(delta);
 
-    // bank the sweep instead of reporting it immediately
-    pendingDelta.current += delta;
+      // bank the sweep instead of reporting it immediately
+      pendingDelta.current += delta;
+    }
 
     // schedule one flush for this frame (if none is scheduled yet)
     if (!rafPending.current) {
@@ -142,6 +163,9 @@ export function Chart({
         rafPending.current = false;
         const total = pendingDelta.current;
         pendingDelta.current = 0;
+        const pan = pendingPan.current;
+        pendingPan.current = { x: 0, y: 0 };
+        if (pan.x || pan.y) onPan(pan.x, pan.y);
         if (import.meta.env.DEV && PROFILE_DRAG) {
           const now = performance.now();
           const gap = perf.current.prev ? now - perf.current.prev : 0;
@@ -154,12 +178,18 @@ export function Chart({
     }
   };
 
-  const onPointerUp = () => {
+  const endGesture = (e: React.PointerEvent, allowTap: boolean) => {
     dragging.current = false;
     svgRef.current?.classList.remove("wheel-dragging");
+    if (e.currentTarget.hasPointerCapture(e.pointerId))
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    if (!allowTap) {
+      if (gesture.current === "pan") pendingPan.current = { x: 0, y: 0 };
+      else pendingDelta.current = 0;
+    }
     // a still press-and-release is a tap: planet beats aspect line beats empty
     // wheel (which clears every selection — App's onSelect(null) resets both)
-    if (moved.current < 3) {
+    if (allowTap && moved.current < 3) {
       const target = downTarget.current as Element | null;
       const planetGroup = target?.closest?.("[data-planet]");
       const aspectGroup = planetGroup ? null : target?.closest?.("[data-aspect]");
@@ -193,7 +223,8 @@ export function Chart({
       ref={svgRef}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
+      onPointerUp={(e) => endGesture(e, true)}
+      onPointerCancel={(e) => endGesture(e, false)}
       onWheel={onWheel}
       onDoubleClick={onReturn}
       viewBox="-515 -515 1030 1030"

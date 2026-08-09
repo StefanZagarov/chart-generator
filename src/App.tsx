@@ -255,6 +255,7 @@ function App() {
             selected={selected}
             selectedAspect={selectedAspect}
             related={related}
+            interactionMode="rotate"
             onScrub={(delta) => {
               returnTween.cancel();
               setUtcMs(
@@ -267,6 +268,7 @@ function App() {
                 ),
               );
             }}
+            onPan={() => {}}
             onWind={(deltaMs) => {
               returnTween.cancel();
               setUtcMs(snapToMinute(utcMs + deltaMs));
