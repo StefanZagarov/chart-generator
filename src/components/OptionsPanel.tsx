@@ -5,9 +5,9 @@ import type { Numerals, PlanetName } from "../types/";
 // astrology works without, so hiding them declutters the wheel
 const OUTER: PlanetName[] = ["Uranus", "Neptune", "Pluto"];
 
-/** The cog-wheel options drawer, top right — the Hyprtimer mechanic in parchment
- * clothes. Closed: cog + "−". Open: cog + "<", and the panel slides in from the
- * right. Logic: the panel is always mounted; hidden it sits 140px off to the
+/** The cog-wheel options drawer in the chart instrument rail — the Hyprtimer
+ * mechanic in parchment clothes. Closed: cog + "−". Open: cog + "<", and the
+ * panel slides in from the right. Logic: the panel is always mounted; hidden it sits 140px off to the
  * right at opacity 0 with visibility:hidden (so it's untabbable and unclickable),
  * and .open just returns it home — the transition on transform+opacity is what
  * reads as "sliding in". Same trick as Hyprtimer's #settings-panel, done with

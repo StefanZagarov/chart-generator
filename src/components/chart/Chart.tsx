@@ -4,7 +4,7 @@ import { Ticks } from "./components/Ticks";
 import { Houses } from "./components/Houses";
 import { Planets } from "./components/Planets";
 import { Aspects } from "./components/Aspects";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 // Drawing pictures in the form of circles and lines
 export function Chart({
@@ -205,13 +205,21 @@ export function Chart({
   // smooth stream of small values; dividing by 100 normalizes both into
   // "notches", and the clamp stops a hard trackpad fling from teleporting.
   // One notch = 1 minute; scrolling down winds forward.
-  const onWheel = (e: React.WheelEvent) => {
-    // The chart viewport can overflow, but wheel input keeps its established
-    // meaning: wind time. Prevent the same event from scrolling the viewport.
-    e.preventDefault();
-    const notches = Math.max(-8, Math.min(8, e.deltaY / 100));
-    onWind(notches * 60_000);
-  };
+  // React delegates wheel events through a passive root listener, where
+  // preventDefault cannot stop an overflowing viewport from scrolling. Attach
+  // this one listener directly so wheel input keeps its established meaning:
+  // winding chart time, never moving the viewport.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const wind = (e: WheelEvent) => {
+      e.preventDefault();
+      const notches = Math.max(-8, Math.min(8, e.deltaY / 100));
+      onWind(notches * 60_000);
+    };
+    svg.addEventListener("wheel", wind, { passive: false });
+    return () => svg.removeEventListener("wheel", wind);
+  }, [onWind]);
 
   // Ascendant position
   const ascendant = chart.asc;
@@ -228,7 +236,6 @@ export function Chart({
       onPointerMove={onPointerMove}
       onPointerUp={(e) => endGesture(e, true)}
       onPointerCancel={(e) => endGesture(e, false)}
-      onWheel={onWheel}
       onDoubleClick={onReturn}
       viewBox="-515 -515 1030 1030"
       className="block h-full w-full cursor-grab touch-none"

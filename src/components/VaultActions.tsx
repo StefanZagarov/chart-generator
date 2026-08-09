@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 
-/** The vault's doorway: Save / Load / Import in the chart area's top-left,
- * just past the sidebar's border (the cog drawer mirrors it on the far right).
+/** The vault's doorway: Save / Load / Import in the chart instrument rail.
  * Load and Import just open their windows (App owns the modals); Save expands
  * into a name field right here — Enter saves, Esc backs out — because a save
  * isn't a save until it has a name, and a whole dialog for one word is
- * ceremony. */
+ * ceremony. The parent rail owns placement so the actions wrap with the other
+ * responsive controls. */
 export function VaultActions({
   onSave,
   onOpenLibrary,
