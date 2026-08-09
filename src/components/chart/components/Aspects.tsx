@@ -1,22 +1,11 @@
 import type { Aspect, Polar } from "../../../types";
+import { ASP_COLOR } from "../chartPresentation";
 
 // Aspect family colors (exported: the side panel's toggle chips reuse them).
 // Color now carries the family alone; line weight and dashing carry strength
 // (see below), so the two members that share a color are told apart by their
 // geometry — an opposition is a full diameter, a square a shorter chord; a
 // trine spans wider than a sextile; and so on.
-export const ASP_COLOR: Record<string, string> = {
-  Conjunction: "#e0851f", // orange
-  Opposition: "#b32d14", // red
-  Square: "#b32d14", // red
-  Trine: "#1d4e89", // blue
-  Sextile: "#1d4e89", // blue
-  Semisextile: "#1d8a44", // green
-  Quincunx: "#1d8a44", // green
-  Quintile: "#00b8d9", // light neon blue
-  Biquintile: "#00b8d9", // light neon blue
-};
-
 // Strength encoding, from the aspect's orb (degrees off exact) measured against
 // the orb it was allowed (maxOrb — wider for luminaries):
 //   exact  (< 1° off)          → thick solid, it's a real hit

@@ -1,22 +1,7 @@
-import type { Planet, PlanetName, Polar } from "../../../types/";
+import type { Planet, Polar } from "../../../types/";
+import { PLANET_COLOR } from "../chartPresentation";
 
 const INK = "#4a3826";
-
-// Optional per-planet glyph colors (toggle in the options drawer). Exported so
-// the side panel's list can tint its glyphs to match the wheel. Node keeps ink.
-export const PLANET_COLOR: Record<PlanetName, string> = {
-  Sun: "#b32d14", // red
-  Mars: "#b32d14",
-  Jupiter: "#b32d14",
-  Moon: "#1d4e89", // blue
-  Neptune: "#1d4e89",
-  Pluto: "#1d4e89",
-  Mercury: "#e0851f", // orange
-  Venus: "#e0851f",
-  Uranus: "#e0851f",
-  Saturn: "#185c34", // dark green
-  Node: INK,
-};
 
 export function Planets({
   polarPoint,

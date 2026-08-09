@@ -1,5 +1,4 @@
-import { houseLabel } from "../../chart/components/Houses";
-import { PLANET_COLOR } from "../../chart/components/Planets";
+import { houseLabel, PLANET_COLOR } from "../../chart/chartPresentation";
 import type { Numerals, Planet } from "../../../types/";
 
 // One row per body: glyph | name (+ ℞ when retrograde) | position | house numeral.

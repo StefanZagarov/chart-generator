@@ -1,4 +1,4 @@
-import { houseLabel } from "../../chart/components/Houses";
+import { houseLabel } from "../../chart/chartPresentation";
 import type { Aspect, Numerals, Planet } from "../../../types/";
 
 // Detail card for the selected planet: name line, position line, then one row

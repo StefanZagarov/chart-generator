@@ -29,7 +29,13 @@ const readMirror = (): SavedChart[] => {
 const writeMirror = (charts: SavedChart[]) =>
   localStorage.setItem(
     KEY,
-    JSON.stringify(charts.map(({ image: _, ...data }) => data)),
+    JSON.stringify(
+      charts.map((chart) => {
+        const data = { ...chart };
+        delete data.image;
+        return data;
+      }),
+    ),
   );
 
 // load() opens the file on first call and returns the same cached resource

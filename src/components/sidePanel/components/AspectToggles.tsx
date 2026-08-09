@@ -1,4 +1,4 @@
-import { ASP_COLOR } from "../../chart/components/Aspects";
+import { ASP_COLOR } from "../../chart/chartPresentation";
 
 // One chip per aspect type, colored like its lines on the wheel. Clicking a chip
 // toggles that type off/on; an off chip renders faded and struck through, and the

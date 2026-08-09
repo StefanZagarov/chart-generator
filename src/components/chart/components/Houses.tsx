@@ -1,26 +1,9 @@
 import type { Numerals, Polar } from "../../../types/";
-
-const ROMAN_NUMERALS = [
-  "I",
-  "II",
-  "III",
-  "IV",
-  "V",
-  "VI",
-  "VII",
-  "VIII",
-  "IX",
-  "X",
-  "XI",
-  "XII",
-];
+import { houseLabel } from "../chartPresentation";
 
 // The one home of house-number formatting — the wheel and the side panel's
 // planet list both call this, so the roman/arabic toggle can't half-apply.
 // Takes the 0-based house INDEX (callers with 1-based `planet.house` pass -1).
-export const houseLabel = (index: number, numerals: Numerals) =>
-  numerals === "roman" ? ROMAN_NUMERALS[index] : String(index + 1);
-
 export function Houses({
   polarPoint,
   cusps,
