@@ -100,7 +100,7 @@ export function OptionsPanel({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="fixed top-4 right-4 z-10 flex flex-col items-end">
+    <div className="relative z-20 ml-auto flex flex-col items-end">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="Options"
@@ -113,7 +113,7 @@ export function OptionsPanel({
 
       <div
         aria-hidden={!open}
-        className={`mt-2 flex flex-col gap-3 border border-gold bg-cream/85 px-4 py-3.5 transition-all duration-200 ease-out ${
+        className={`absolute right-0 top-full mt-2 flex flex-col gap-3 border border-gold bg-cream/90 px-4 py-3.5 transition-all duration-200 ease-out motion-reduce:transition-none ${
           open
             ? "visible opacity-100 translate-x-0"
             : "invisible opacity-0 translate-x-[140px]"

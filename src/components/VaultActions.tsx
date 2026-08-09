@@ -31,9 +31,7 @@ export function VaultActions({
     "text-[10px] tracking-[0.22em] uppercase text-bronze hover:text-ink bg-transparent border-0 p-0 cursor-pointer transition-colors";
 
   return (
-    // 332px panel + 3px double border + breathing room = the wheel side's
-    // left corner; fixed like the cog so the wheel scrolls under neither
-    <div className="fixed top-4 left-[352px] z-10 flex flex-col items-start gap-1.5">
+    <div className="relative z-10 flex flex-col items-start gap-1.5">
       <div className="flex items-center gap-2.5">
         <button className={action} onClick={() => setNaming((n) => !n)}>
           Save

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Chart } from "./components/chart/Chart";
+import { ChartViewport } from "./components/chart/ChartViewport";
 import { SidePanel } from "./components/sidePanel/SidePanel";
 import { OptionsPanel } from "./components/OptionsPanel";
 import { VaultActions } from "./components/VaultActions";
@@ -234,60 +234,84 @@ function App() {
       {/* select-none: belt to the preventDefault suspenders in Chart — the
           wheel's numerals/labels and the footer must never highlight mid-drag */}
       <main className="flex-1 min-w-0 h-full flex flex-col select-none p-4 max-[1000px]:min-h-svh max-[1000px]:p-3">
-        {/* The wheel fills whatever space the window leaves (its container is
-            flex-1, the footer is pinned below). The SVG is h-full w-full and its
-            viewBox is square with the default preserveAspectRatio, so the drawing
-            scales to the SMALLER of the box's width/height and stays centered —
-            the chart grows and shrinks with the window, never clipping. */}
-        <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center max-[1000px]:min-h-[420px]">
-          {/* The drag pipeline: Chart reports "user swept delta degrees" → scrub
-              solves "at what time has the ascendant moved that far?" → setUtcMs →
-              re-render → computeChart → every polarPoint lands differently → the
-              wheel has "rotated". Nothing ever rotates; only time changes.
-              Drag (onScrub) stays CONTINUOUS; scroll (onWind) snaps to minutes;
-              onReturn (double-click) coasts home to the cast moment over ~0.8s. */}
-          <Chart
-            chart={chartView}
-            showSigns={showSigns}
-            numerals={numerals}
-            planetColors={planetColors}
-            zodiacColors={zodiacColors}
-            selected={selected}
-            selectedAspect={selectedAspect}
-            related={related}
-            interactionMode="rotate"
-            onScrub={(delta) => {
-              returnTween.cancel();
-              setUtcMs(
-                scrub(
-                  delta,
-                  { utcMs, asc: chart.asc },
-                  city.lat,
-                  city.lon,
-                  HOUSE_SYSTEM,
-                ),
-              );
-            }}
-            onPan={() => {}}
-            onWind={(deltaMs) => {
-              returnTween.cancel();
-              setUtcMs(snapToMinute(utcMs + deltaMs));
-            }}
-            onSelect={selectPlanet}
-            onSelectAspect={selectAspect}
-            onReturn={() => returnTween.start(utcMs, castMs, 800)}
-          />
-        </div>
+        <ChartViewport
+          chart={chartView}
+          showSigns={showSigns}
+          numerals={numerals}
+          planetColors={planetColors}
+          zodiacColors={zodiacColors}
+          selected={selected}
+          selectedAspect={selectedAspect}
+          related={related}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((open) => !open)}
+          actions={
+            <>
+              <VaultActions
+                onSave={(name) => {
+                  const cast = {
+                    castMs: utcMs,
+                    city,
+                    houseSystem: HOUSE_SYSTEM,
+                  };
+                  saveChart({
+                    name,
+                    ...cast,
+                    image: wheelImage(cast, numerals),
+                  }).then(setSaved);
+                  setLoadedName(name);
+                }}
+                onOpenLibrary={() => setDialog("library")}
+                onOpenImport={() => setDialog("import")}
+              />
+              <OptionsPanel
+                showSigns={showSigns}
+                numerals={numerals}
+                planetColors={planetColors}
+                zodiacColors={zodiacColors}
+                hidden={hidden}
+                onToggleSigns={() => setShowSigns((shown) => !shown)}
+                onToggleNumerals={() =>
+                  setNumerals((style) =>
+                    style === "roman" ? "arabic" : "roman",
+                  )
+                }
+                onTogglePlanetColors={() => setPlanetColors((colors) => !colors)}
+                onToggleZodiacColors={() => setZodiacColors((colors) => !colors)}
+                onTogglePlanet={togglePlanet}
+              />
+            </>
+          }
+          onScrub={(delta) => {
+            returnTween.cancel();
+            setUtcMs(
+              scrub(
+                delta,
+                { utcMs, asc: chart.asc },
+                city.lat,
+                city.lon,
+                HOUSE_SYSTEM,
+              ),
+            );
+          }}
+          onWind={(deltaMs) => {
+            returnTween.cancel();
+            setUtcMs(snapToMinute(utcMs + deltaMs));
+          }}
+          onSelect={selectPlanet}
+          onSelectAspect={selectAspect}
+          onReturn={() => returnTween.start(utcMs, castMs, 800)}
+        />
         {/* Live caption: wallClock re-derives the city's local date & time from
             utcMs every render, so this line follows the wheel as it's dragged.
             formatDate + time (no seconds); formatDate labels BCE years. */}
-        <footer className="flex-none text-center pt-2">
+        <footer className="flex-none text-center pt-2 px-2">
           {loadedName && (
             <div className="font-fell text-[24px] tracking-[0.02em]">
               {loadedName}
             </div>
           )}
-          <div className="italic text-[20px] text-umber">
+          <div className="italic text-[20px] max-[600px]:text-[16px] leading-snug text-umber">
             {city.name}, {city.label.split(", ")[1]} ·{" "}
             {(() => {
               const wc = wallClock(city.tz, utcMs);
@@ -297,33 +321,6 @@ function App() {
           </div>
         </footer>
       </main>
-      <VaultActions
-        onSave={(name) => {
-          const cast = { castMs: utcMs, city, houseSystem: HOUSE_SYSTEM };
-          saveChart({
-            name,
-            ...cast,
-            image: wheelImage(cast, numerals), // bake the preview at save time
-          }).then(setSaved);
-          setLoadedName(name); // what's on the wheel now answers to this name
-        }}
-        onOpenLibrary={() => setDialog("library")}
-        onOpenImport={() => setDialog("import")}
-      />
-      <OptionsPanel
-        showSigns={showSigns}
-        numerals={numerals}
-        planetColors={planetColors}
-        zodiacColors={zodiacColors}
-        hidden={hidden}
-        onToggleSigns={() => setShowSigns((s) => !s)}
-        onToggleNumerals={() =>
-          setNumerals((n) => (n === "roman" ? "arabic" : "roman"))
-        }
-        onTogglePlanetColors={() => setPlanetColors((c) => !c)}
-        onToggleZodiacColors={() => setZodiacColors((c) => !c)}
-        onTogglePlanet={togglePlanet}
-      />
       {dialog === "library" && (
         <ChartLibrary
           charts={saved}

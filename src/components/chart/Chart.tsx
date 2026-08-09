@@ -206,6 +206,9 @@ export function Chart({
   // "notches", and the clamp stops a hard trackpad fling from teleporting.
   // One notch = 1 minute; scrolling down winds forward.
   const onWheel = (e: React.WheelEvent) => {
+    // The chart viewport can overflow, but wheel input keeps its established
+    // meaning: wind time. Prevent the same event from scrolling the viewport.
+    e.preventDefault();
     const notches = Math.max(-8, Math.min(8, e.deltaY / 100));
     onWind(notches * 60_000);
   };
