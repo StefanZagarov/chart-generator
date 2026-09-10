@@ -32,18 +32,21 @@ export const BODY_GLYPHS: Record<PlanetName, string> = {
   Uranus: "♅︎",
   Neptune: "♆︎",
   Pluto: "♇︎",
-  Node: "☊︎",
+  "North Node": "☊︎",
+  "South Node": "☋︎",
 };
 
 /** Aspect geometry and display metadata; orb widths live in OrbConfig. */
 export const ASPECT_DEFINITIONS = [
   { type: "Conjunction", glyph: "☌︎", angle: 0 },
-  { type: "Sextile", glyph: "⚹︎", angle: 60 },
+  { type: "Opposition", glyph: "☍︎", angle: 180 },
   { type: "Square", glyph: "□︎", angle: 90 },
   { type: "Trine", glyph: "△︎", angle: 120 },
-  { type: "Opposition", glyph: "☍︎", angle: 180 },
+  { type: "Sextile", glyph: "⚹︎", angle: 60 },
   { type: "Semisextile", glyph: "⚺︎", angle: 30 },
   { type: "Quincunx", glyph: "⚻︎", angle: 150 },
+  { type: "Semisquare", glyph: "∠", angle: 45 },
+  { type: "Sesquisquare", glyph: "⚼︎", angle: 135 },
   { type: "Quintile", glyph: "Q", angle: 72 },
   { type: "Biquintile", glyph: "bQ", angle: 144 },
 ] as const;
@@ -56,6 +59,8 @@ export const DEFAULT_ORB_CONFIG: OrbConfig = {
     Trine: 7,
     Opposition: 8,
     Semisextile: 2,
+    Semisquare: 2,
+    Sesquisquare: 2,
     Quincunx: 3,
     Quintile: 2,
     Biquintile: 2,
@@ -64,6 +69,8 @@ export const DEFAULT_ORB_CONFIG: OrbConfig = {
 };
 const MINOR: Partial<Record<AspectType, 1>> = {
   Semisextile: 1,
+  Semisquare: 1,
+  Sesquisquare: 1,
   Quincunx: 1,
   Quintile: 1,
   Biquintile: 1,
@@ -94,9 +101,12 @@ function buildPlanet(raw: RawBody, cusps: number[]): Planet {
     glyph: BODY_GLYPHS[raw.name],
     lon: raw.lon,
     speed: raw.speed,
-    // the mean node always drifts backwards (~-0.05°/day) — flagging it ℞ forever
-    // would be noise, so the Node is exempt from the retrograde mark by convention
-    retro: raw.name === "Node" ? false : raw.speed < 0,
+    // the mean nodes always drift backwards (~-0.05°/day) — flagging them ℞
+    // forever would be noise, so both are exempt by convention
+    retro:
+      raw.name === "North Node" || raw.name === "South Node"
+        ? false
+        : raw.speed < 0,
     sign,
     signName: SIGN_NAMES[sign],
     signGlyph: SIGN_GLYPHS[sign],
@@ -107,9 +117,8 @@ function buildPlanet(raw: RawBody, cusps: number[]): Planet {
 }
 
 /** The aspect web.
- * Logic: every unordered pair of bodies, except pairs involving the Node — it
- * makes no aspects by this app's convention (checked by name, so the rule holds
- * no matter what order the bodies arrive in). The pair's separation is the
+ * Logic: every unordered pair of bodies, except pairs involving either lunar
+ * node — they make no aspects by this app's current convention. The pair's separation is the
  * shortest angular distance between them; each aspect type matches if the
  * separation sits within the configured degrees of the type's exact angle —
  * widened by the shared bonus when the Sun or Moon is involved, except for
@@ -122,7 +131,13 @@ function findAspects(planets: Planet[], orbConfig: OrbConfig): Aspect[] {
     for (let j = i + 1; j < planets.length; j++) {
       const a = planets[i],
         b = planets[j];
-      if (a.name === "Node" || b.name === "Node") continue;
+      if (
+        a.name === "North Node" ||
+        a.name === "South Node" ||
+        b.name === "North Node" ||
+        b.name === "South Node"
+      )
+        continue;
       const sep = Math.abs(dAng(a.lon, b.lon));
       const hasLuminary =
         a.name === "Sun" ||
@@ -159,8 +174,8 @@ function findAspects(planets: Planet[], orbConfig: OrbConfig): Aspect[] {
   return aspects;
 }
 
-/** Raw sky numbers in, the app's Chart out. `bodies` must arrive in BODY_GLYPHS
- * order (Sun…Pluto, Node last); `cusps` is 12 longitudes with cusps[0] = asc. */
+/** Raw sky numbers in, the app's Chart out. The South Node is derived exactly
+ * opposite the North Node; `cusps` is 12 longitudes with cusps[0] = asc. */
 export function assembleChart(
   jdUT: number,
   bodies: RawBody[],
@@ -169,7 +184,19 @@ export function assembleChart(
   cusps: number[],
   orbConfig: OrbConfig = DEFAULT_ORB_CONFIG,
 ): Chart {
-  const planets = bodies.map((raw) => buildPlanet(raw, cusps));
+  const northNode = bodies.find(({ name }) => name === "North Node");
+  const chartBodies =
+    northNode && !bodies.some(({ name }) => name === "South Node")
+      ? [
+          ...bodies,
+          {
+            name: "South Node" as const,
+            lon: (northNode.lon + 180) % 360,
+            speed: northNode.speed,
+          },
+        ]
+      : bodies;
+  const planets = chartBodies.map((raw) => buildPlanet(raw, cusps));
   return {
     jdUT,
     asc,

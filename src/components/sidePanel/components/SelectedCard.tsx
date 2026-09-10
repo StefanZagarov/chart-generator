@@ -16,8 +16,10 @@ export function SelectedCard({
   return (
     <div className="border border-gold bg-cream/50 px-3.5 py-3">
       <div className="font-fell text-[19px]">
-        {planet.glyph} {planet.name}
-        {planet.retro && <span className="text-rust text-sm"> ℞</span>}
+        <span className="font-symbol">{planet.glyph}</span> {planet.name}
+        {planet.retro && (
+          <span className="font-symbol text-rust text-sm"> ℞</span>
+        )}
       </div>
       <div className="italic text-umber text-sm mt-0.5 mb-2">
         In {planet.signName} · House {houseLabel(planet.house - 1, numerals)} ·{" "}
@@ -37,7 +39,8 @@ export function SelectedCard({
             className="flex justify-between gap-2 text-sm py-0.5 border-t border-gold/35"
           >
             <span>
-              {aspect.glyph} {aspect.type} — {partnerGlyph} {partnerName}
+              <span className="font-symbol">{aspect.glyph}</span> {aspect.type} —{" "}
+              <span className="font-symbol">{partnerGlyph}</span> {partnerName}
             </span>
             <span className="text-bronze">orb {aspect.orbLabel}</span>
           </div>

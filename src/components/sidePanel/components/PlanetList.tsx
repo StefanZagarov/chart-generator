@@ -1,6 +1,17 @@
 import { houseLabel, PLANET_COLOR } from "../../chart/chartPresentation";
 import type { Numerals, Planet } from "../../../types/";
 
+function PositionLabel({ label }: { label: string }) {
+  const separator = label.lastIndexOf(" ");
+  if (separator === -1) return label;
+  return (
+    <>
+      {label.slice(0, separator + 1)}
+      <span className="font-symbol">{label.slice(separator + 1)}</span>
+    </>
+  );
+}
+
 // One row per body: glyph | name (+ ℞ when retrograde) | position | house numeral.
 // Everything shown comes pre-formatted from the engine (posLabel, retro, house),
 // so this list live-updates for free as the wheel is dragged through time.
@@ -43,7 +54,9 @@ export function PlanetList({
             {angle.short}
           </span>
           <span className="text-[14.5px]">{angle.key}</span>
-          <span className="text-[14.5px]">{angle.label}</span>
+          <span className="text-[14.5px]">
+            <PositionLabel label={angle.label} />
+          </span>
           <span className="text-[12.5px] italic text-bronze text-right">
             {angle.house}
           </span>
@@ -61,7 +74,7 @@ export function PlanetList({
           }`}
         >
           <span
-            className="text-[17px]"
+            className="font-symbol text-[17px]"
             style={planetColors ? { color: PLANET_COLOR[planet.name] } : undefined}
           >
             {planet.glyph}
@@ -69,10 +82,12 @@ export function PlanetList({
           <span className="text-[14.5px]">
             {planet.name}{" "}
             {planet.retro && (
-              <span className="text-rust text-[12px]">{"℞"}</span>
+              <span className="font-symbol text-rust text-[12px]">{"℞"}</span>
             )}
           </span>
-          <span className="text-[14.5px]">{planet.posLabel}</span>
+          <span className="text-[14.5px]">
+            <PositionLabel label={planet.posLabel} />
+          </span>
           <span className="text-[12.5px] italic text-bronze text-right">
             {houseLabel(planet.house - 1, numerals)}
           </span>

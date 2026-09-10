@@ -20,7 +20,8 @@ export type PlanetName =
   | "Uranus"
   | "Neptune"
   | "Pluto"
-  | "Node";
+  | "North Node"
+  | "South Node";
 
 export type AspectType =
   | "Conjunction"
@@ -29,6 +30,8 @@ export type AspectType =
   | "Trine"
   | "Opposition"
   | "Semisextile"
+  | "Semisquare"
+  | "Sesquisquare"
   | "Quincunx"
   | "Quintile"
   | "Biquintile";

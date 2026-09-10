@@ -65,6 +65,7 @@ export function Zodiac({
             dominantBaseline="central"
             fontSize={33}
             fill={colors ? ELEMENT_COLOR[signIndex % 4] : "#4a3826"}
+            className="font-symbol"
           >
             {glyph}
           </text>

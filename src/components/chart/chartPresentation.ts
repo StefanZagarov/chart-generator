@@ -10,6 +10,8 @@ export const ASP_COLOR: Record<string, string> = {
   Sextile: "#1d4e89",
   Semisextile: "#1d8a44",
   Quincunx: "#1d8a44",
+  Semisquare: "#7f1d1d",
+  Sesquisquare: "#7f1d1d",
   Quintile: "#00b8d9",
   Biquintile: "#00b8d9",
 };
@@ -25,7 +27,8 @@ export const PLANET_COLOR: Record<PlanetName, string> = {
   Venus: "#e0851f",
   Uranus: "#e0851f",
   Saturn: "#185c34",
-  Node: INK,
+  "North Node": INK,
+  "South Node": INK,
 };
 
 const ROMAN_NUMERALS = [

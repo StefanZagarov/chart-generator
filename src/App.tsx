@@ -207,7 +207,7 @@ function App({ initialOrbConfig }: { initialOrbConfig: OrbConfig }) {
   };
 
   return (
-    <div className="w-full h-svh flex max-[1000px]:h-auto max-[1000px]:min-h-svh max-[1000px]:block">
+    <div className="w-full h-svh overflow-x-clip flex max-[1000px]:h-auto max-[1000px]:min-h-svh max-[1000px]:block">
       <SidePanel
         chart={visible}
         utcMs={utcMs}

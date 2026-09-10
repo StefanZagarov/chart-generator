@@ -15,9 +15,9 @@ import type { Chart, HouseSystem, OrbConfig, PlanetName } from "../types/";
  * knows the engine changed. Uses the built-in Moshier ephemeris: no data files,
  * works offline, sub-arcsecond planet positions. */
 
-// our body order (Sun…Pluto, Node last — assembly and the wheel rely on it),
-// each mapped to its Swiss Ephemeris body id. Node = MEAN node, matching the
-// old engine; the true node wobbles daily and would flicker on the wheel.
+// our calculated body order (Sun…Pluto, North Node last), each mapped to its
+// Swiss Ephemeris body id. North Node = MEAN node, matching the old engine;
+// assembly derives the South Node exactly opposite it.
 const BODY_IDS: [PlanetName, number][] = [
   ["Sun", SwePlanet.Sun],
   ["Moon", SwePlanet.Moon],
@@ -29,7 +29,7 @@ const BODY_IDS: [PlanetName, number][] = [
   ["Uranus", SwePlanet.Uranus],
   ["Neptune", SwePlanet.Neptune],
   ["Pluto", SwePlanet.Pluto],
-  ["Node", LunarPoint.MeanNode],
+  ["North Node", LunarPoint.MeanNode],
 ];
 
 // our house-system names → Swiss Ephemeris system letters

@@ -76,11 +76,13 @@ If disk persistence fails, the current in-memory configuration remains active. T
 
 ## User interface
 
-Add an **Orbs** button immediately before Save in the chart's top-left action rail. The orb control and `VaultActions` remain separate components; their shared parent determines placement.
+Add an icon-only **Orbs** button immediately before Save in the chart's top-left action rail. Its SVG combines an angle mark, a curved crossing stroke, and a detached degree circle. A `−`/direction indicator communicates closed/open state in the same style as the Settings control. The orb control and `VaultActions` remain separate components; their shared parent determines placement.
 
 The button independently toggles its own panel. It does not open, close, or otherwise coordinate with the existing right-side settings panel, so both may be open simultaneously.
 
 The orb panel follows the existing settings panel's mounted-but-hidden transition pattern. Its closed position is translated to the left; opening brings it into place from left to right with the same duration and easing as the current settings panel. Closed content is invisible, cannot receive pointer input, and is removed from keyboard navigation.
+
+Both toolbar icon sets use 20px primary icons and 16px state indicators. The Save, Load, and Import labels use 13px text with a fixed line height inside the same 32px action row, keeping them vertically centered without moving the rail divider.
 
 The panel contains one row for each of the nine aspect types followed by a Luminary bonus row. Each aspect row shows its existing glyph, name, and a compact numeric control with decrement, value, and increment controls. The minimum and maximum controls disable at `0°` and `15°` respectively. Each button changes the value by `0.5°` and applies it immediately.
 

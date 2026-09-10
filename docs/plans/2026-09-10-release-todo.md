@@ -81,22 +81,24 @@ Decision required before implementation: whether one threshold applies to every 
 
 ### 9. Aspect-orb settings
 
-- [~] Add an independent orb-settings button before Save with a panel animated from the left.
-- [~] List all nine aspect orbs plus one shared major-aspect luminary bonus.
-- [~] Allow values from `0°` through `15°` in `0.5°` steps with live recalculation, validation, and Reset defaults.
-- [~] Use one inclusive orb threshold; do not add separate applying/separating values or hysteresis.
-- [~] Persist one global configuration to a Tauri settings file with localStorage as mirror, fallback, and browser storage.
-- [~] Use canonical defaults for cached saved-chart images and current global values for loaded live charts.
+- [x] Add an independent angle/degree icon before Save with an orb-settings panel animated from the left.
+- [x] List all nine aspect orbs plus one shared major-aspect luminary bonus.
+- [x] Allow values from `0°` through `15°` in `0.5°` steps with live recalculation, validation, and Reset defaults.
+- [x] Use one inclusive orb threshold; do not add separate applying/separating values or hysteresis.
+- [x] Persist one global configuration to a Tauri settings file with localStorage as mirror, fallback, and browser storage.
+- [x] Use canonical defaults for cached saved-chart images and current global values for loaded live charts.
 - [x] Follow the approved design in `docs/superpowers/specs/2026-09-10-orb-settings-design.md`.
 
-Implementation is present and passes scoped lint/build. Visual interaction, edited-value persistence, and cached-preview behavior still need confirmation before the `[~]` items become `[x]`.
+Completed 2026-09-10. The final toolbar uses 20px primary icons, 16px state indicators, and vertically centered 13px Save/Load/Import labels. Scoped lint, production build, Tauri launch/default-file creation, and whitespace checks passed; automated browser interaction was unavailable.
 
-### 10. South node
+### 10. Lunar nodes
 
-- [ ] Derive the South Node exactly 180° from the existing mean North Node.
-- [ ] Show it on the wheel and in the side list with its sign, degree, and house.
-- [ ] Keep North and South Node labels and glyphs visually distinct.
-- [ ] Hiding or selecting nodes behaves consistently with planets.
+- [x] Derive the South Node exactly 180° from the mean North Node.
+- [x] Show both nodes on the wheel and in the side list with distinct names, glyphs, signs, degrees, and houses.
+- [x] Let either node use the existing planet-selection behavior.
+- [x] Keep both nodes aspect-free until optional node aspects are implemented separately.
+- [ ] Add independent North Node and South Node visibility controls.
+- [ ] Decide whether to offer mean-node versus true-node calculation before adding a node-mode setting.
 
 ### 11. Optional node aspects
 

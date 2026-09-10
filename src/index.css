@@ -4,6 +4,7 @@
 @theme {
   --font-garamond: "EB Garamond", serif;
   --font-fell: "IM Fell English", serif;
+  --font-symbol: "DejaVu Sans", sans-serif;
 
   /* parchment background gradient stops, light → dark */
   --color-parchment-50: #f6efdd;

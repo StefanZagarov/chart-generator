@@ -11,6 +11,7 @@ import "@fontsource/eb-garamond/500.css";
 import "@fontsource/eb-garamond/600.css";
 import "@fontsource/im-fell-english/400.css";
 import "@fontsource/im-fell-english/400-italic.css";
+import "@fontsource/dejavu-sans/400.css";
 
 // The WASM engine and the city atlas load once, in parallel, before React ever
 // mounts — so computeChart and findCity stay synchronous and no component

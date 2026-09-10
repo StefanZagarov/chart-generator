@@ -35,6 +35,13 @@ export function Planets({
   // Logic: For each of the 11 bodies, pick its ring depth from the stacking map (374 / 326 / 278), convert its zodiac longitude to screen x,y with the same polarPoint() everything else uses, and drop its glyph there, centered — exactly like the sign glyphs, just at a chart-dependent angle instead of i*30+15.
   return (
     <g>
+      <defs>
+        <radialGradient id="planet-selection-halo">
+          <stop offset="0%" stopColor="#ffca00" stopOpacity={0.18} />
+          <stop offset="55%" stopColor="#ffca00" stopOpacity={0.09} />
+          <stop offset="100%" stopColor="#ffca00" stopOpacity={0} />
+        </radialGradient>
+      </defs>
       {planets.map((planet) => {
         const glyphRadius = 374 - stackLevel[planet.name] * 48; // level 0/1/2 → 374/326/278
         const [glyphX, glyphY] = polarPoint(planet.lon, glyphRadius);
@@ -58,6 +65,16 @@ export function Planets({
             opacity={related && !related.has(planet.name) ? 0.2 : 1}
             className="cursor-pointer transition-opacity duration-300"
           >
+            {/* Soft halo behind the selected planet glyph */}
+            <circle
+              cx={glyphX}
+              cy={glyphY}
+              r={25}
+              fill="url(#planet-selection-halo)"
+              opacity={selected === planet.name ? 1 : 0}
+              className="transition-opacity duration-300"
+            />
+
             {/* Planet glyph */}
             <text
               x={glyphX}
@@ -66,6 +83,7 @@ export function Planets({
               dominantBaseline="central"
               fontSize={30}
               fill={colors ? PLANET_COLOR[planet.name] : INK}
+              className="font-symbol"
             >
               {planet.glyph}
             </text>
@@ -99,8 +117,14 @@ export function Planets({
               y={labelY}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={12.5}
-              fill="#6b573d"
+              fontSize={selected === planet.name ? 14 : 12.5}
+              fontWeight={selected === planet.name ? 500 : 400}
+              fill={selected === planet.name ? "#8f3b2c" : "#6b573d"}
+              stroke={selected === planet.name ? "#f6efdd" : "none"}
+              strokeWidth={3}
+              strokeLinejoin="round"
+              paintOrder="stroke"
+              className="transition-all duration-300"
             >
               {planet.degLabel}
             </text>
@@ -115,6 +139,7 @@ export function Planets({
                 fontSize={12}
                 fontStyle="italic"
                 fill="#8f3b2c"
+                className="font-symbol"
               >
                 {"℞"}
               </text>
@@ -123,17 +148,6 @@ export function Planets({
             {/* Invisible fat hit target — taps don't need pixel precision.
                 Transparent fill still catches pointer events; fill="none" wouldn't. */}
             <circle cx={glyphX} cy={glyphY} r={23} fill="rgba(0,0,0,0)" />
-            {/* Selection ring around the chosen planet's glyph */}
-            <circle
-              cx={glyphX}
-              cy={glyphY}
-              r={20}
-              fill="none"
-              stroke="#8f3b2c"
-              strokeWidth={0.9}
-              opacity={selected === planet.name ? 1 : 0}
-              className="transition-opacity duration-300"
-            />
           </g>
         );
       })}

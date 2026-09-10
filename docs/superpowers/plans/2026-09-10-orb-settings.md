@@ -190,21 +190,23 @@ Expected: both commands exit successfully and App receives a validated configura
 **Files:**
 - Create: `src/components/OrbSettingsPanel.tsx`
 - Modify: `src/App.tsx`
+- Modify: `src/components/OptionsPanel.tsx`
+- Modify: `src/components/VaultActions.tsx`
 
 **Interfaces:**
 - Consumes: `ASPECT_DEFINITIONS`, `DEFAULT_ORB_CONFIG`, `OrbConfig`
 - Props: `config`, `saveFailed`, `onChange(next: OrbConfig)`, `onReset()`
-- Produces: independent Orbs trigger and left-opening settings panel
+- Produces: independent angle/degree icon trigger and left-opening settings panel
 
 - [x] **Step 1: Build the panel shell**
 
-Create `OrbSettingsPanel` with local `open` state. Match the action text styling used by `VaultActions` for the **Orbs** trigger. Use a `relative` left-aligned wrapper and an absolute panel below the trigger.
+Create `OrbSettingsPanel` with local `open` state. Its icon-only trigger uses an angle, curved crossing stroke, detached degree circle, and the same `−`/direction state indicator pattern as Settings. Use 20px primary icons, 16px indicators, a `relative` left-aligned wrapper, and an absolute panel below the trigger.
 
 Keep the panel mounted. When closed, apply `invisible`, `opacity-0`, `-translate-x-[140px]`, and `aria-hidden`; when open, apply `visible`, `opacity-100`, and `translate-x-0`. Match the existing panel's `duration-200`, easing, parchment surface, gold border, and reduced-motion behavior. Do not read or control the right settings panel.
 
 - [x] **Step 2: Implement one reusable numeric row**
 
-Inside the component file, add a focused row component receiving `label`, `glyph`, `value`, and `onChange`. It keeps a text draft synchronized when the accepted `value` prop changes.
+Inside the component file, add a focused row component receiving `label`, `glyph`, `value`, and `onChange`. Accepted values remain prop-derived; local state holds only an active text draft. Reset remounts the rows to clear any invalid draft without synchronously copying props into state from an effect.
 
 The decrement and increment buttons call `onChange(Math.max(0, value - 0.5))` and `onChange(Math.min(15, value + 0.5))`, and disable at their respective boundaries. The text input uses `inputMode="decimal"`.
 
@@ -221,6 +223,8 @@ Add one **Reset defaults** button at the bottom. Show a compact persistence warn
 In App's `ChartViewport` `actions` content, render `OrbSettingsPanel` immediately before `VaultActions`. Pass `orbConfig`, `orbSaveFailed`, the App update function, and a reset callback that supplies a fresh nested copy of `DEFAULT_ORB_CONFIG` through the same update function.
 
 Keep the components as siblings; do not add orb responsibilities to `VaultActions` or change its save-name behavior.
+
+Enlarge the existing Settings cog and indicator to the same 20px/16px sizes. Set the Save, Load, and Import labels to 13px with fixed line height inside a 32px row so they align vertically with the icon controls without expanding the divider area.
 
 - [x] **Step 5: Check the integrated UI**
 
@@ -244,7 +248,7 @@ Expected: both commands exit successfully with no new lint suppressions.
 - Consumes: completed Tasks 1–3
 - Produces: verified end result and accurate TODO status
 
-- [ ] **Step 1: Verify the browser result**
+- [~] **Step 1: Verify the browser result**
 
 Run the browser app and check:
 
@@ -261,6 +265,8 @@ npm run dev
 - Reset restores every canonical default.
 - Reloading retains the current global values through localStorage.
 
+The user visually reviewed and accepted the final icon size, shape, spacing, and action-label alignment. Automated browser interaction was unavailable, so the remaining interaction checks were not executed through browser automation.
+
 - [~] **Step 2: Verify the desktop result**
 
 Run:
@@ -271,11 +277,11 @@ npm run tauri dev
 
 Change values, close and relaunch, and confirm they return from `settings.json`. Verify an absent disk entry promotes the browser mirror and an existing disk entry replaces a conflicting mirror. A simulated invalid stored field must normalize to its individual default without discarding valid sibling fields.
 
-- [ ] **Step 3: Verify preview policy**
+- [~] **Step 3: Verify preview policy**
 
 With non-default live values, save a chart and open the library. Confirm its cached image uses canonical default orbs. Load that chart and confirm the live wheel uses the current global settings.
 
-- [ ] **Step 4: Record only verified completion**
+- [x] **Step 4: Record only verified completion**
 
 After all relevant checks pass, mark the seven Task 9 checklist items `[x]` in `docs/plans/2026-09-10-release-todo.md`. Leave any item unchecked if its verification could not be completed, and state that limitation in the handoff.
 

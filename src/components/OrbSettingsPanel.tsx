@@ -62,7 +62,11 @@ function OrbRow({
   return (
     <div className="grid grid-cols-[1fr_auto] items-center gap-3">
       <div className="min-w-0 text-[11px] tracking-[0.08em] text-umber">
-        {glyph && <span className="inline-block w-5 text-center text-ink">{glyph}</span>}
+        {glyph && (
+          <span className="font-symbol inline-block w-5 text-center text-ink">
+            {glyph}
+          </span>
+        )}
         {label}
       </div>
       <div className="flex items-stretch border border-gold">

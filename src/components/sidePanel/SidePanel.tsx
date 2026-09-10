@@ -64,7 +64,7 @@ export function SidePanel({
   return (
     <aside
       id="chart-data-panel"
-      className={`flex-none w-[332px] max-w-[88vw] h-full overflow-y-auto border-r-[3px] border-double border-gold px-6 pt-6 pb-4 flex flex-col gap-4 max-[1000px]:fixed max-[1000px]:inset-y-0 max-[1000px]:left-0 max-[1000px]:z-40 max-[1000px]:bg-parchment-50 max-[1000px]:transition-transform max-[1000px]:duration-200 max-[1000px]:ease-out motion-reduce:transition-none ${
+      className={`relative z-40 flex-none w-[332px] max-w-[88vw] h-full overflow-y-auto border-r-[3px] border-double border-gold bg-parchment-50 px-6 pt-6 pb-4 flex flex-col gap-4 max-[1000px]:fixed max-[1000px]:inset-y-0 max-[1000px]:left-0 max-[1000px]:transition-transform max-[1000px]:duration-200 max-[1000px]:ease-out motion-reduce:transition-none ${
         drawerOpen
           ? "max-[1000px]:translate-x-0"
           : "max-[1000px]:-translate-x-full"
