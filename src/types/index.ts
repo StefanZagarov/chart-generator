@@ -33,6 +33,11 @@ export type AspectType =
   | "Quintile"
   | "Biquintile";
 
+export interface OrbConfig {
+  aspects: Record<AspectType, number>;
+  luminaryBonus: number;
+}
+
 export interface Planet {
   name: PlanetName;
   glyph: string;

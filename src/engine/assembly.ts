@@ -3,6 +3,7 @@ import type {
   Aspect,
   AspectType,
   Chart,
+  OrbConfig,
   Planet,
   PlanetName,
 } from "../types/";
@@ -34,19 +35,33 @@ export const BODY_GLYPHS: Record<PlanetName, string> = {
   Node: "☊︎",
 };
 
-/** [type, glyph, exact angle, base orb] — the app's astrological opinions, verbatim */
-const ASPECTS: [AspectType, string, number, number][] = [
-  ["Conjunction", "☌︎", 0, 8],
-  ["Sextile", "⚹︎", 60, 5],
-  ["Square", "□︎", 90, 7],
-  ["Trine", "△︎", 120, 7],
-  ["Opposition", "☍︎", 180, 8],
-  // minor aspects — tight orbs, no luminary bonus
-  ["Semisextile", "⚺︎", 30, 2],
-  ["Quincunx", "⚻︎", 150, 3],
-  ["Quintile", "Q", 72, 2],
-  ["Biquintile", "bQ", 144, 2],
-];
+/** Aspect geometry and display metadata; orb widths live in OrbConfig. */
+export const ASPECT_DEFINITIONS = [
+  { type: "Conjunction", glyph: "☌︎", angle: 0 },
+  { type: "Sextile", glyph: "⚹︎", angle: 60 },
+  { type: "Square", glyph: "□︎", angle: 90 },
+  { type: "Trine", glyph: "△︎", angle: 120 },
+  { type: "Opposition", glyph: "☍︎", angle: 180 },
+  { type: "Semisextile", glyph: "⚺︎", angle: 30 },
+  { type: "Quincunx", glyph: "⚻︎", angle: 150 },
+  { type: "Quintile", glyph: "Q", angle: 72 },
+  { type: "Biquintile", glyph: "bQ", angle: 144 },
+] as const;
+
+export const DEFAULT_ORB_CONFIG: OrbConfig = {
+  aspects: {
+    Conjunction: 8,
+    Sextile: 6,
+    Square: 7,
+    Trine: 7,
+    Opposition: 8,
+    Semisextile: 2,
+    Quincunx: 3,
+    Quintile: 2,
+    Biquintile: 2,
+  },
+  luminaryBonus: 2,
+};
 const MINOR: Partial<Record<AspectType, 1>> = {
   Semisextile: 1,
   Quincunx: 1,
@@ -96,12 +111,12 @@ function buildPlanet(raw: RawBody, cusps: number[]): Planet {
  * makes no aspects by this app's convention (checked by name, so the rule holds
  * no matter what order the bodies arrive in). The pair's separation is the
  * shortest angular distance between them; each aspect type matches if the
- * separation sits within `orb` degrees of the type's exact angle — widened by
- * 1.5° when the Sun or Moon is involved (luminaries get looser orbs by
- * tradition), except for MINOR aspects, which stay tight. If several types
+ * separation sits within the configured degrees of the type's exact angle —
+ * widened by the shared bonus when the Sun or Moon is involved, except for
+ * MINOR aspects, which stay tight. If several types
  * match, the tightest (smallest deviation) wins. The final list is sorted
  * tightest-first so the panel reads strongest to weakest. */
-function findAspects(planets: Planet[]): Aspect[] {
+function findAspects(planets: Planet[], orbConfig: OrbConfig): Aspect[] {
   const aspects: Aspect[] = [];
   for (let i = 0; i < planets.length; i++)
     for (let j = i + 1; j < planets.length; j++) {
@@ -109,19 +124,19 @@ function findAspects(planets: Planet[]): Aspect[] {
         b = planets[j];
       if (a.name === "Node" || b.name === "Node") continue;
       const sep = Math.abs(dAng(a.lon, b.lon));
-      const lum =
+      const hasLuminary =
         a.name === "Sun" ||
         a.name === "Moon" ||
         b.name === "Sun" ||
-        b.name === "Moon"
-          ? 1.5
-          : 0;
+        b.name === "Moon";
       let best:
         | { type: AspectType; glyph: string; orb: number; maxOrb: number }
         | null = null;
-      for (const [type, glyph, angle, orb] of ASPECTS) {
+      for (const { type, glyph, angle } of ASPECT_DEFINITIONS) {
         const d = Math.abs(sep - angle);
-        const maxOrb = orb + (MINOR[type] ? 0 : lum);
+        const maxOrb =
+          orbConfig.aspects[type] +
+          (MINOR[type] || !hasLuminary ? 0 : orbConfig.luminaryBonus);
         if (d <= maxOrb && (!best || d < best.orb))
           best = { type, glyph, orb: d, maxOrb };
       }
@@ -152,6 +167,7 @@ export function assembleChart(
   asc: number,
   mc: number,
   cusps: number[],
+  orbConfig: OrbConfig = DEFAULT_ORB_CONFIG,
 ): Chart {
   const planets = bodies.map((raw) => buildPlanet(raw, cusps));
   return {
@@ -160,7 +176,7 @@ export function assembleChart(
     mc,
     cusps,
     planets,
-    aspects: findAspects(planets),
+    aspects: findAspects(planets, orbConfig),
     ascLabel: fmtDM(asc % 30) + " " + SIGN_GLYPHS[Math.floor(asc / 30)],
     mcLabel: fmtDM(mc % 30) + " " + SIGN_GLYPHS[Math.floor(mc / 30)],
   };

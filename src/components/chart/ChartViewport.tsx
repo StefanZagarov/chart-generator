@@ -13,6 +13,7 @@ type ChartViewportProps = Omit<ChartProps, "interactionMode" | "onPan"> & {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   actions: ReactNode;
+  settings: ReactNode;
 };
 
 const MIN_WHEEL_SIZE = 680;
@@ -28,6 +29,7 @@ export function ChartViewport({
   sidebarOpen,
   onToggleSidebar,
   actions,
+  settings,
   ...chartProps
 }: ChartViewportProps) {
   const [zoom, setZoom] = useState(100);
@@ -146,33 +148,37 @@ export function ChartViewport({
             </button>
           </div>
 
-          <div role="group" aria-label="Chart zoom" className="flex">
-            <button
-              type="button"
-              aria-label="Zoom out"
-              disabled={zoom === MIN_ZOOM}
-              onClick={() => changeZoom(zoom - ZOOM_STEP)}
-              className={`${railButton} border-r-0 px-2.5 text-[14px] leading-none`}
-            >
-              −
-            </button>
-            <button
-              type="button"
-              aria-label="Reset zoom"
-              onClick={() => changeZoom(100)}
-              className={`${railButton} border-r-0 w-[58px] px-1 tracking-[0.08em]`}
-            >
-              {zoom}%
-            </button>
-            <button
-              type="button"
-              aria-label="Zoom in"
-              disabled={zoom === MAX_ZOOM}
-              onClick={() => changeZoom(zoom + ZOOM_STEP)}
-              className={`${railButton} px-2.5 text-[14px] leading-none`}
-            >
-              +
-            </button>
+          <div className="flex items-center gap-3">
+            <div role="group" aria-label="Chart zoom" className="flex">
+              <button
+                type="button"
+                aria-label="Zoom out"
+                disabled={zoom === MIN_ZOOM}
+                onClick={() => changeZoom(zoom - ZOOM_STEP)}
+                className={`${railButton} border-r-0 px-2.5 text-[14px] leading-none`}
+              >
+                −
+              </button>
+              <button
+                type="button"
+                aria-label="Reset zoom"
+                onClick={() => changeZoom(100)}
+                className={`${railButton} border-r-0 w-[58px] px-1 tracking-[0.08em]`}
+              >
+                {zoom}%
+              </button>
+              <button
+                type="button"
+                aria-label="Zoom in"
+                disabled={zoom === MAX_ZOOM}
+                onClick={() => changeZoom(zoom + ZOOM_STEP)}
+                className={`${railButton} px-2.5 text-[14px] leading-none`}
+              >
+                +
+              </button>
+            </div>
+
+            {settings}
           </div>
         </div>
       </div>

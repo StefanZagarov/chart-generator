@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 import { initEngine } from "./engine/swiss";
 import { loadCities } from "./engine/almanac";
+import { loadOrbConfig } from "./lib/orbSettings";
 import "@fontsource/eb-garamond/400.css";
 import "@fontsource/eb-garamond/400-italic.css";
 import "@fontsource/eb-garamond/500.css";
@@ -17,11 +18,11 @@ import "@fontsource/im-fell-english/400-italic.css";
 // in #root in index.html. The second callback handles ONLY a failed load
 // (network, blocked .wasm, missing cities.json): without it the app would
 // sit on the placeholder forever with the error buried in the console.
-Promise.all([initEngine(), loadCities()]).then(
-  () => {
+Promise.all([initEngine(), loadCities(), loadOrbConfig()]).then(
+  ([, , initialOrbConfig]) => {
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
-        <App />
+        <App initialOrbConfig={initialOrbConfig} />
       </StrictMode>,
     );
   },

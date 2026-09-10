@@ -1,4 +1,5 @@
 import { computeChart } from "../../engine/swiss";
+import { DEFAULT_ORB_CONFIG } from "../../engine/assembly";
 import { Zodiac } from "./components/Zodiac";
 import { Ticks } from "./components/Ticks";
 import { Houses } from "./components/Houses";
@@ -25,6 +26,7 @@ export function MiniWheel({
     saved.city.lat,
     saved.city.lon,
     saved.houseSystem,
+    DEFAULT_ORB_CONFIG,
   );
   const polarPoint: Polar = (longitude, radius) => {
     const angleRad = ((180 - (longitude - chart.asc)) * Math.PI) / 180;

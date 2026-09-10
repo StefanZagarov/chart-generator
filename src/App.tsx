@@ -5,17 +5,21 @@ import { OptionsPanel } from "./components/OptionsPanel";
 import { VaultActions } from "./components/VaultActions";
 import { ChartLibrary } from "./components/ChartLibrary";
 import { ImportDialog } from "./components/ImportDialog";
+import { OrbSettingsPanel } from "./components/OrbSettingsPanel";
 import { computeChart } from "./engine/swiss";
+import { DEFAULT_ORB_CONFIG } from "./engine/assembly";
 import { CITIES, clampTime, formatDate, wallClock } from "./engine/almanac";
 import { deleteChart, importCharts, listCharts, saveChart } from "./lib/chartVault";
 import { parseAAF } from "./lib/aaf";
 import { wheelImage } from "./lib/wheelImage";
+import { saveOrbConfig } from "./lib/orbSettings";
 import { scrub } from "./lib/scrubTime";
 import { useTween } from "./hooks/useTween";
 import type {
   City,
   HouseSystem,
   Numerals,
+  OrbConfig,
   PlanetName,
   SavedChart,
 } from "./types/";
@@ -39,7 +43,7 @@ const HOUSE_SYSTEM: HouseSystem = "Placidus";
 // the onScrub comment: per-frame snapping stalls slow drags)
 const snapToMinute = (ms: number) => Math.round(ms / 60_000) * 60_000;
 
-function App() {
+function App({ initialOrbConfig }: { initialOrbConfig: OrbConfig }) {
   const [utcMs, setUtcMsRaw] = useState(CAST_MS);
   // The natal anchor: what the form last cast. Double-click tweens utcMs back here
   const [castMs, setCastMsRaw] = useState(CAST_MS);
@@ -62,6 +66,12 @@ function App() {
   const [planetColors, setPlanetColors] = useState(false);
   const [zodiacColors, setZodiacColors] = useState(false);
   const [hidden, setHidden] = useState<ReadonlySet<PlanetName>>(new Set());
+  const [orbConfig, setOrbConfig] = useState(initialOrbConfig);
+  const [orbSaveFailed, setOrbSaveFailed] = useState(false);
+  const updateOrbConfig = (next: OrbConfig) => {
+    setOrbConfig(next);
+    saveOrbConfig(next).then((saved) => setOrbSaveFailed(!saved));
+  };
   const togglePlanet = (name: PlanetName) =>
     setHidden((h) => {
       const next = new Set(h);
@@ -112,7 +122,13 @@ function App() {
   // (drag, scroll, steppers) cancels it so the user's hand always wins
   const returnTween = useTween(setUtcMs);
 
-  const chart = computeChart(utcMs, city.lat, city.lon, HOUSE_SYSTEM);
+  const chart = computeChart(
+    utcMs,
+    city.lat,
+    city.lon,
+    HOUSE_SYSTEM,
+    orbConfig,
+  );
 
   // Hidden outer planets drop out entirely — off the wheel, out of the aspect
   // web, and out of the panel list. Unlike aspectsOff (which hides lines but
@@ -247,6 +263,17 @@ function App() {
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           actions={
             <>
+              <OrbSettingsPanel
+                config={orbConfig}
+                saveFailed={orbSaveFailed}
+                onChange={updateOrbConfig}
+                onReset={() =>
+                  updateOrbConfig({
+                    aspects: { ...DEFAULT_ORB_CONFIG.aspects },
+                    luminaryBonus: DEFAULT_ORB_CONFIG.luminaryBonus,
+                  })
+                }
+              />
               <VaultActions
                 onSave={(name) => {
                   const cast = {
@@ -264,23 +291,25 @@ function App() {
                 onOpenLibrary={() => setDialog("library")}
                 onOpenImport={() => setDialog("import")}
               />
-              <OptionsPanel
-                showSigns={showSigns}
-                numerals={numerals}
-                planetColors={planetColors}
-                zodiacColors={zodiacColors}
-                hidden={hidden}
-                onToggleSigns={() => setShowSigns((shown) => !shown)}
-                onToggleNumerals={() =>
-                  setNumerals((style) =>
-                    style === "roman" ? "arabic" : "roman",
-                  )
-                }
-                onTogglePlanetColors={() => setPlanetColors((colors) => !colors)}
-                onToggleZodiacColors={() => setZodiacColors((colors) => !colors)}
-                onTogglePlanet={togglePlanet}
-              />
             </>
+          }
+          settings={
+            <OptionsPanel
+              showSigns={showSigns}
+              numerals={numerals}
+              planetColors={planetColors}
+              zodiacColors={zodiacColors}
+              hidden={hidden}
+              onToggleSigns={() => setShowSigns((shown) => !shown)}
+              onToggleNumerals={() =>
+                setNumerals((style) =>
+                  style === "roman" ? "arabic" : "roman",
+                )
+              }
+              onTogglePlanetColors={() => setPlanetColors((colors) => !colors)}
+              onToggleZodiacColors={() => setZodiacColors((colors) => !colors)}
+              onTogglePlanet={togglePlanet}
+            />
           }
           onScrub={(delta) => {
             returnTween.cancel();

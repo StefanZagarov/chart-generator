@@ -28,11 +28,11 @@ export function VaultActions({
   };
 
   const action =
-    "text-[10px] tracking-[0.22em] uppercase text-bronze hover:text-ink bg-transparent border-0 p-0 cursor-pointer transition-colors";
+    "text-[13px] leading-none tracking-[0.22em] uppercase text-bronze hover:text-ink bg-transparent border-0 p-0 cursor-pointer transition-colors";
 
   return (
     <div className="relative z-10 flex flex-col items-start gap-1.5">
-      <div className="flex items-center gap-2.5">
+      <div className="flex h-8 items-center gap-2.5">
         <button className={action} onClick={() => setNaming((n) => !n)}>
           Save
         </button>

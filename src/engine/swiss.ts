@@ -4,10 +4,10 @@ import {
   LunarPoint,
   HouseSystem as SweHouseSystem,
 } from "@swisseph/browser";
-import { assembleChart } from "./assembly";
+import { assembleChart, DEFAULT_ORB_CONFIG } from "./assembly";
 import type { RawBody } from "./assembly";
 import { norm } from "./almanac";
-import type { Chart, HouseSystem, PlanetName } from "../types/";
+import type { Chart, HouseSystem, OrbConfig, PlanetName } from "../types/";
 
 /** The Swiss Ephemeris adapter — the only file that talks to the WASM engine.
  * initEngine() must resolve once (main.tsx awaits it before mounting React);
@@ -77,6 +77,7 @@ export function computeChart(
   lat: number,
   lon: number,
   houseSystem: HouseSystem = "Placidus",
+  orbConfig: OrbConfig = DEFAULT_ORB_CONFIG,
 ): Chart {
   const s = engine();
   const jd = toJd(utcMs);
@@ -98,6 +99,7 @@ export function computeChart(
     norm(h.ascendant),
     norm(h.mc),
     h.cusps.slice(1, 13).map(norm),
+    orbConfig,
   );
 }
 
